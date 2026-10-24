@@ -2,7 +2,7 @@
   "name": "kotlin-vscode",
   "displayName": "Kotlin Syntax",
   "description": "Kotlin syntax support powered by a portable Kotlin lexer and parser.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "private": true,
   "type": "module",
   "engines": {

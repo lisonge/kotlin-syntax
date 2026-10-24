@@ -1,9 +1,7 @@
 # What's Changed
 
-## 0.0.2
+## 0.0.3
 
-- Added a dedicated **Kotlin Syntax** log channel and **Show Logs** command for Worker lifecycle, WASM loading and error details.
-- Added **Restart Parser** to clear parser state and refresh highlighting without reloading VS Code.
-- Added a 30-second request timeout and automatic pausing after three consecutive failures, with a single notification offering logs or restart.
-- Added debug-level request timing and metadata without deliberately logging source text or document paths.
-- Added fault-recovery tests for Worker startup failures, timeouts, queued requests, disposal and manual recovery. Malformed and incomplete Kotlin remain normal input.
+- Simplified GitHub Releases to build, validate and publish in a single job.
+- Added version numbers to downloadable VSIX filenames.
+- Switched Marketplace publication to manual VSIX upload and documented the steps.
