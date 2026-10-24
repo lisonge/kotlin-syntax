@@ -31,7 +31,7 @@ if (vsix) {
   // A separate empty development extension hosts the test runner. The target is installed normally.
   developmentPath = resolve(profile,'harness');
   await mkdir(developmentPath,{recursive:true});
-  await writeFile(resolve(developmentPath,'package.json'), JSON.stringify({name:'vsix-test-harness',publisher:'local',version:'0.0.1',engines:{vscode:'^1.141.0'}}));
+  await writeFile(resolve(developmentPath,'package.json'), JSON.stringify({name:'vsix-test-harness',publisher:'local',version:'0.0.1',engines:JSON.parse(await readFile(resolve(root,'package.json'),'utf8')).engines}));
   env.VSCODE_EXPECT_INSTALLED = '1';
   env.VSCODE_EXPECT_EXTENSIONS_DIR = resolve(profile,'extensions');
 }

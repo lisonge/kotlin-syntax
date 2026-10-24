@@ -1,12 +1,18 @@
 {
   "name": "kotlin-vscode",
   "displayName": "Kotlin Syntax",
-  "description": "Kotlin syntax support powered by a portable Kotlin lexer and parser.",
-  "version": "0.0.4",
+  "description": "Parser-powered Kotlin syntax highlighting for .kt and .kts files. No JVM language server or Gradle import required.",
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#191c22",
+    "theme": "dark"
+  },
+  "pricing": "Free",
+  "version": "0.0.5",
   "private": true,
   "type": "module",
   "engines": {
-    "vscode": "^1.141.0"
+    "vscode": "^1.117.0"
   },
   "scripts": {
     "vscode:prepublish": "node scripts/prepublish.ts",
@@ -48,7 +54,7 @@
     ]
   },
   "devDependencies": {
-    "@types/vscode": "1.140.0"
+    "@types/vscode": "1.116.0"
   },
   "publisher": "lisonge",
   "main": "./dist/extension.js",

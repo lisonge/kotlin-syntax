@@ -6,6 +6,7 @@
 !dist/**/*.wasm
 !README.md
 !CHANGELOG.md
+!media/icon.png
 !LICENSE
 !LICENSE.txt
 !LICENSE.md

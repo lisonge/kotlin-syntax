@@ -28,4 +28,4 @@ The KMP library configures JVM (Java 8 bytecode, built with JDK 21) and Wasm. An
 - Syntax alone cannot reliably classify unresolved references as classes, functions or properties.
 - Passing the current valid/malformed corpus does not establish universal equivalence with the compiler.
 
-Node/pnpm requirements come from the root [package.json](../package.json), and the editor requirement comes from [kotlin-vscode/package.json](../kotlin-vscode/package.json). The extension host has been validated on VS Code 1.141.0. Upgrade procedure: [upstream-upgrade.md](upstream-upgrade.md).
+Node/pnpm requirements come from the root [package.json](../package.json), and the editor requirement comes from [kotlin-vscode/package.json](../kotlin-vscode/package.json). The minimum version is [VS Code 1.117.0](https://code.visualstudio.com/updates/v1_117), released on 2026-04-22 and selected on 2026-10-25 as the six-month compatibility baseline. Packaged VSIX installation and extension-host tests passed on VS Code 1.117.0; development-host tests also passed on 1.141.0. Upgrade procedure: [upstream-upgrade.md](upstream-upgrade.md).
