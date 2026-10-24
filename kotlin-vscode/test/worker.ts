@@ -149,8 +149,9 @@ test('independent highlighting expectations survive malformed kt/kts and sequent
 
 
 test('timeouts release active and queued jobs, circuit breaker pauses, reset recovers', async () => {
-  const { mkdtemp, writeFile, rm } = await import('node:fs/promises');
+  const { mkdir, mkdtemp, writeFile, rm } = await import('node:fs/promises');
   const { fileURLToPath } = await import('node:url');
+  await mkdir(new URL('../build/',import.meta.url),{recursive:true});
   const dir = await mkdtemp(fileURLToPath(new URL('../build/fault-',import.meta.url)));
   const { pathToFileURL } = await import('node:url');
   const url = pathToFileURL(dir + '/worker.mjs');
