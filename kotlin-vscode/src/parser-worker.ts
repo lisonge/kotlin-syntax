@@ -1,35 +1,54 @@
+import * as parser from 'kotlin-parser/wasm';
 import { parentPort } from 'node:worker_threads';
-import { encodeTokens, replacement, type Request, type Response } from './protocol.ts';
-const parser = await import('./parser/kotlin-parser.mjs');
-const documents = new Map<string, { id: number; source: string; script: boolean; data?: Uint32Array }>();
+import { encodeTokens, type Request, type Response } from './protocol.ts';
+const documents = new Map<string, { id: number; source: string; script: boolean; version: number; data?: Uint32Array }>();
 const port = parentPort!;
-port.postMessage({request:0,ready:true} satisfies Response);
+port.postMessage({ kind: 'ready' } satisfies Response);
 port.on('message', (message: Request) => {
   if (message.kind === 'close') {
     const state = documents.get(message.key);
     if (state) parser.closeDocument(state.id);
     documents.delete(message.key); return;
   }
-  const { key, source, script } = message.snapshot;
+  const key = message.kind === 'parse' ? message.snapshot.key : message.key;
   try {
     let state = documents.get(key);
-    if (state && state.script !== script) { parser.closeDocument(state.id); documents.delete(key); state = undefined; }
-    if (!state) {
-      state = { id: parser.openDocument(source, script), source, script };
+    if (message.kind === 'parse') {
+      const { source, script, version } = message.snapshot;
+      if (state) parser.closeDocument(state.id);
+      documents.delete(key);
+      state = { id: parser.openDocument(source, script), source, script, version };
       documents.set(key, state);
-    } else if (state.source !== source) {
-      const edit = replacement(state.source, source);
-      parser.applyDocumentEdit(state.id, edit.start, edit.end, edit.text);
-      state.source = source; state.data = undefined;
+    } else {
+      if (!state || state.version !== message.baseVersion || state.script !== message.script) {
+        port.postMessage({ kind: 'resync', request: message.request } satisfies Response);
+        return;
+      }
+      let start = state.source.length, end = 0, delta = 0;
+      for (const edits of message.batches) {
+        // Descending ranges within a batch; batches themselves are chronological.
+        for (const edit of edits) {
+          start = Math.min(start, edit.start);
+          end = Math.max(end, edit.end - delta);
+          delta += edit.text.length - (edit.end - edit.start);
+          state.source = state.source.slice(0, edit.start) + edit.text + state.source.slice(edit.end);
+        }
+      }
+      if (message.batches.some(edits => edits.length)) {
+        // One enclosing replacement avoids reparsing once per queued keystroke.
+        parser.applyDocumentEdit(state.id, start, end, state.source.slice(start, end + delta));
+        state.data = undefined;
+      }
+      state.version = message.version;
     }
-    state.data ??= encodeTokens(source, JSON.parse(parser.documentHighlights(state.id)));
+    state.data ??= encodeTokens(state.source, parser.documentClassifications(state.id));
     // Transfer a copy; retain the cached buffer for unchanged-document requests.
     const data = state.data.slice();
-    port.postMessage({ request: message.request, data } satisfies Response, [data.buffer]);
+    port.postMessage({ kind: 'result', request: message.request, version: state.version, data } satisfies Response, [data.buffer]);
   } catch (error) {
     const state = documents.get(key);
     if (state) { try { parser.closeDocument(state.id); } catch {} }
     documents.delete(key);
-    port.postMessage({ request: message.request, error: error instanceof Error ? (error.stack ?? error.message) : String(error) } satisfies Response);
+    port.postMessage({ kind: 'error', request: message.request, error: error instanceof Error ? (error.stack ?? error.message) : String(error) } satisfies Response);
   }
 });

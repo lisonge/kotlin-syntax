@@ -1,9 +1,14 @@
-plugins { alias(libs.plugins.kotlin.multiplatform) }
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+plugins {
+    alias(libs.plugins.kotlin.multiplatform)
+    `maven-publish`
+}
 
 @OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
 kotlin {
     jvmToolchain(21)
-    jvm()
+    jvm { compilerOptions.jvmTarget.set(JvmTarget.JVM_1_8) }
     wasmJs {
         outputModuleName.set("kotlin-parser")
         nodejs()

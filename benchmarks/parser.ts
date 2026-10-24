@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { outputDirectory } from './output.ts';
-import { highlights } from '../kotlin-vscode/dist/highlights.js';
+import { highlights } from '../kotlin-vscode/test/legacy-highlights.ts';
 import { encodeTokens } from '../kotlin-vscode/dist/protocol.js';
 import { ParserClient } from '../kotlin-vscode/dist/parser-client.js';
 const directory = await outputDirectory();
@@ -94,9 +94,9 @@ try {
         if(mode==='legacy') parser.editDocument(id,edit.start,edit.end,edit.text);
         else parser.applyDocumentEdit(id,edit.start,edit.end,edit.text);
       }
-      const json=mode==='legacy'?parser.documentTree(id):parser.documentHighlights(id);
-      payloadBytes=Buffer.byteLength(json);
-      const spans=mode==='legacy'?highlights(JSON.parse(json)).flatMap(h=>[h.start,h.end,h.type,h.modifiers]):JSON.parse(json);
+      const output=mode==='legacy'?parser.documentTree(id):parser.documentClassifications(id);
+      payloadBytes=typeof output==='string'?Buffer.byteLength(output):output.byteLength;
+      const spans=typeof output==='string'?highlights(JSON.parse(output)).flatMap(h=>[h.start,h.end,h.type,h.modifiers]):output;
       return encodeTokens(next,spans);
     }
     console.log(mode,name,'cold/full');

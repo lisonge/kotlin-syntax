@@ -1,2 +1,6 @@
-export interface Request { version: number; source: string; script: boolean; moduleUrl: string }
-export interface Result { version: number; spans?: number[]; elapsed?: number; error?: string }
+export interface Edit { start: number; end: number; text: string }
+export type Request = { kind: 'sync'; version: number; source: string; script: boolean }
+  | { kind: 'edit'; baseVersion: number; version: number; edits: Edit[] };
+export type Result = { version: number; spans: Int32Array; elapsed: number }
+  | { version: number; resync: true }
+  | { version: number; error: string };

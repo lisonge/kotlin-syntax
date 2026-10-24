@@ -3,6 +3,7 @@
   "include": [
     "scripts/**/*.ts",
     "kotlin-parser/scripts/**/*.ts",
+    "kotlin-parser/js/**/*.ts",
     "benchmarks/**/*.ts"
   ]
 }

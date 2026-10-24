@@ -1,0 +1,327 @@
+{
+  "lexer": 1069,
+  "parser": 3065,
+  "unicodeSnapshots": 948,
+  "depths": [
+    {
+      "kind": "parentheses",
+      "depth": 64,
+      "js": {
+        "ok": true,
+        "treeHash": "2b04ed824659e88b1a4e30a12c4f8576ab849e8eec94f8237116f451f42fbec2",
+        "highlightHash": "de086ce07f677f1e44a5b31f0bd9ab88822d43e1dd9266ea1a554121870fcc5d",
+        "processMs": 94.75860000000011
+      },
+      "wasm": {
+        "ok": true,
+        "treeHash": "2b04ed824659e88b1a4e30a12c4f8576ab849e8eec94f8237116f451f42fbec2",
+        "highlightHash": "de086ce07f677f1e44a5b31f0bd9ab88822d43e1dd9266ea1a554121870fcc5d",
+        "processMs": 89.77530000000024
+      }
+    },
+    {
+      "kind": "parentheses",
+      "depth": 128,
+      "js": {
+        "ok": true,
+        "treeHash": "65f4cd5517c0ffbb3241f37d0b0ea49bcb3fdae491ef6972597d486565e2342b",
+        "highlightHash": "4a0f8efcfaf81ae5e57917dace908ccc00760a1919d59e0a79824c1a081bb903",
+        "processMs": 92.63700000000017
+      },
+      "wasm": {
+        "ok": true,
+        "treeHash": "65f4cd5517c0ffbb3241f37d0b0ea49bcb3fdae491ef6972597d486565e2342b",
+        "highlightHash": "4a0f8efcfaf81ae5e57917dace908ccc00760a1919d59e0a79824c1a081bb903",
+        "processMs": 101.59619999999995
+      }
+    },
+    {
+      "kind": "parentheses",
+      "depth": 256,
+      "js": {
+        "ok": true,
+        "treeHash": "d99bb68a513ad83dfd7e83c5a9f9faa4ef0e4ccacf0b21488207364c4444cde4",
+        "highlightHash": "306353a81319b686401854dbb0b8f47e92706c19b5898501e8ac8192a6424103",
+        "processMs": 113.16739999999982
+      },
+      "wasm": {
+        "ok": true,
+        "treeHash": "d99bb68a513ad83dfd7e83c5a9f9faa4ef0e4ccacf0b21488207364c4444cde4",
+        "highlightHash": "306353a81319b686401854dbb0b8f47e92706c19b5898501e8ac8192a6424103",
+        "processMs": 113.14340000000038
+      }
+    },
+    {
+      "kind": "parentheses",
+      "depth": 512,
+      "js": {
+        "ok": true,
+        "treeHash": "7d60c37d8f4134a7f9ba8aeb1877a0ed3cc66297433dc096ddb8c430f965172b",
+        "highlightHash": "3d9b4010064065fa616e7f2f9f882b36bf601fb1924b83159d6a25ae11783dc8",
+        "processMs": 113.61989999999969
+      },
+      "wasm": {
+        "ok": true,
+        "treeHash": "7d60c37d8f4134a7f9ba8aeb1877a0ed3cc66297433dc096ddb8c430f965172b",
+        "highlightHash": "3d9b4010064065fa616e7f2f9f882b36bf601fb1924b83159d6a25ae11783dc8",
+        "processMs": 113.4059000000002
+      }
+    },
+    {
+      "kind": "parentheses",
+      "depth": 1024,
+      "js": {
+        "ok": true,
+        "treeHash": "178fd0d8316505f46f7d4993950b626b53549a68d87c80ee0b5d786690ad67c6",
+        "highlightHash": "1cd46332cea374ff3fc30f69dea6ce304e2ebbf0ec02eeed0868d0679b51836b",
+        "processMs": 131.6174000000001
+      },
+      "wasm": {
+        "ok": false,
+        "stage": "open",
+        "error": "RangeError: Maximum call stack size exceeded",
+        "processMs": 92.63850000000002
+      }
+    },
+    {
+      "kind": "types",
+      "depth": 64,
+      "js": {
+        "ok": true,
+        "treeHash": "497ed1872b9a1d38fe3e517c748565767a33ca8927705ac4cb292fc0364bb234",
+        "highlightHash": "042a4c7755105a505576517367dd85ab25ab2451120b5f4472a3ee98987d7617",
+        "processMs": 111.45240000000013
+      },
+      "wasm": {
+        "ok": true,
+        "treeHash": "497ed1872b9a1d38fe3e517c748565767a33ca8927705ac4cb292fc0364bb234",
+        "highlightHash": "042a4c7755105a505576517367dd85ab25ab2451120b5f4472a3ee98987d7617",
+        "processMs": 98.97409999999991
+      }
+    },
+    {
+      "kind": "types",
+      "depth": 128,
+      "js": {
+        "ok": true,
+        "treeHash": "99b5ecf957d5b7d43deab53661a1269e707ab484b18c45975064206eb1807c55",
+        "highlightHash": "34a833d4979aa53baeaabb76da0bcacea2faa2075ff3bda10d3f56b66ffabfff",
+        "processMs": 112.28009999999995
+      },
+      "wasm": {
+        "ok": true,
+        "treeHash": "99b5ecf957d5b7d43deab53661a1269e707ab484b18c45975064206eb1807c55",
+        "highlightHash": "34a833d4979aa53baeaabb76da0bcacea2faa2075ff3bda10d3f56b66ffabfff",
+        "processMs": 109.41949999999997
+      }
+    },
+    {
+      "kind": "types",
+      "depth": 256,
+      "js": {
+        "ok": true,
+        "treeHash": "eaf90a5fc7cdfd7f51d67d3d531f90422c6fae86fe90f61eefc0d9e6ec64a97a",
+        "highlightHash": "d84b1cb24431d1b17564b76ef408b5aee1cbc7e8f115c50637c2eadbae762092",
+        "processMs": 125.46389999999974
+      },
+      "wasm": {
+        "ok": false,
+        "stage": "highlights",
+        "error": "RangeError: Maximum call stack size exceeded",
+        "processMs": 102.35840000000007
+      }
+    },
+    {
+      "kind": "types",
+      "depth": 512,
+      "js": {
+        "ok": false,
+        "stage": "tree",
+        "error": "RangeError: Maximum call stack size exceeded",
+        "processMs": 129.06940000000031
+      },
+      "wasm": {
+        "ok": false,
+        "stage": "highlights",
+        "error": "RangeError: Maximum call stack size exceeded",
+        "processMs": 114.16910000000053
+      }
+    },
+    {
+      "kind": "types",
+      "depth": 1024,
+      "js": {
+        "ok": false,
+        "stage": "highlights",
+        "error": "RangeError: Maximum call stack size exceeded",
+        "processMs": 171.0631999999996
+      },
+      "wasm": {
+        "ok": false,
+        "stage": "highlights",
+        "error": "RangeError: Maximum call stack size exceeded",
+        "processMs": 117.1286
+      }
+    },
+    {
+      "kind": "blocks",
+      "depth": 64,
+      "js": {
+        "ok": true,
+        "treeHash": "4bf88cbcda2f63d66b0ecec6b8bc884e38d4935c17de51c914e612d02907fd12",
+        "highlightHash": "40f62aa906905ceb3c356efdc06dd3f3fd20408e73e698c3886b15d6f998ed8f",
+        "processMs": 106.28780000000006
+      },
+      "wasm": {
+        "ok": true,
+        "treeHash": "4bf88cbcda2f63d66b0ecec6b8bc884e38d4935c17de51c914e612d02907fd12",
+        "highlightHash": "40f62aa906905ceb3c356efdc06dd3f3fd20408e73e698c3886b15d6f998ed8f",
+        "processMs": 119.99089999999978
+      }
+    },
+    {
+      "kind": "blocks",
+      "depth": 128,
+      "js": {
+        "ok": true,
+        "treeHash": "a0c35cbf3ca267b836c64da9cd2aa47af3699b9e27254a483679f57d68b9c638",
+        "highlightHash": "2e7c8a2dc4f88995e4ee6d32d2ca787043ff606a2402502cdb1333e8a36d0b8c",
+        "processMs": 121.10559999999987
+      },
+      "wasm": {
+        "ok": true,
+        "treeHash": "a0c35cbf3ca267b836c64da9cd2aa47af3699b9e27254a483679f57d68b9c638",
+        "highlightHash": "2e7c8a2dc4f88995e4ee6d32d2ca787043ff606a2402502cdb1333e8a36d0b8c",
+        "processMs": 123.7452000000003
+      }
+    },
+    {
+      "kind": "blocks",
+      "depth": 256,
+      "js": {
+        "ok": true,
+        "treeHash": "fc2a4ffd052103ff35e4bb1c671d16a9bf4224b0c97af6ac5b419ed775264816",
+        "highlightHash": "0e0c3cc18ede61ca24b2039198b9028f018daae69cdcfdc4f473841aaae54fba",
+        "processMs": 153.40300000000025
+      },
+      "wasm": {
+        "ok": true,
+        "treeHash": "fc2a4ffd052103ff35e4bb1c671d16a9bf4224b0c97af6ac5b419ed775264816",
+        "highlightHash": "0e0c3cc18ede61ca24b2039198b9028f018daae69cdcfdc4f473841aaae54fba",
+        "processMs": 145.48180000000048
+      }
+    },
+    {
+      "kind": "blocks",
+      "depth": 512,
+      "js": {
+        "ok": true,
+        "treeHash": "39dc0d5b9d27d59ea17cc9dd42919375159da06946ba0ceb89999984c54ada63",
+        "highlightHash": "dfbbf4392b4f41c4485bc4f4745c76191641c60166eeab48a48196b3f61ef2af",
+        "processMs": 197.4461999999994
+      },
+      "wasm": {
+        "ok": false,
+        "stage": "highlights",
+        "error": "RangeError: Maximum call stack size exceeded",
+        "processMs": 129.8783000000003
+      }
+    },
+    {
+      "kind": "blocks",
+      "depth": 1024,
+      "js": {
+        "ok": false,
+        "stage": "open",
+        "error": "RangeError: Maximum call stack size exceeded",
+        "processMs": 121.16519999999946
+      },
+      "wasm": {
+        "ok": false,
+        "stage": "open",
+        "error": "RangeError: Maximum call stack size exceeded",
+        "processMs": 114.3697000000002
+      }
+    },
+    {
+      "kind": "comments",
+      "depth": 64,
+      "js": {
+        "ok": true,
+        "treeHash": "2bbbff00a1bc0b46fbe5feb11850627a97e73420989a3c590f256c30f391d8e3",
+        "highlightHash": "669519b207429c6d990361fe6fe085d6a915e42adc94c946bd8a23bb266ee8df",
+        "processMs": 83.55349999999999
+      },
+      "wasm": {
+        "ok": true,
+        "treeHash": "2bbbff00a1bc0b46fbe5feb11850627a97e73420989a3c590f256c30f391d8e3",
+        "highlightHash": "669519b207429c6d990361fe6fe085d6a915e42adc94c946bd8a23bb266ee8df",
+        "processMs": 101.08060000000023
+      }
+    },
+    {
+      "kind": "comments",
+      "depth": 128,
+      "js": {
+        "ok": true,
+        "treeHash": "42a3a137ec3784da87019b85d5ded7e735f61e30d4e5983fa34b7f4d146af975",
+        "highlightHash": "fb7694678f1d1bbe8cc75f8622805143df7e02a327aa5ae606f68c87b2dfa2f9",
+        "processMs": 87.44329999999991
+      },
+      "wasm": {
+        "ok": true,
+        "treeHash": "42a3a137ec3784da87019b85d5ded7e735f61e30d4e5983fa34b7f4d146af975",
+        "highlightHash": "fb7694678f1d1bbe8cc75f8622805143df7e02a327aa5ae606f68c87b2dfa2f9",
+        "processMs": 93.19260000000031
+      }
+    },
+    {
+      "kind": "comments",
+      "depth": 256,
+      "js": {
+        "ok": true,
+        "treeHash": "760fe4db2e0cf6952863859afb372db0201411dcd9d727e2823f57c3d1d48476",
+        "highlightHash": "98abfb3e23579c445df4aa4f40e2a17de96073f51ced9058ab62266af4d83130",
+        "processMs": 84.16589999999997
+      },
+      "wasm": {
+        "ok": true,
+        "treeHash": "760fe4db2e0cf6952863859afb372db0201411dcd9d727e2823f57c3d1d48476",
+        "highlightHash": "98abfb3e23579c445df4aa4f40e2a17de96073f51ced9058ab62266af4d83130",
+        "processMs": 84.72549999999956
+      }
+    },
+    {
+      "kind": "comments",
+      "depth": 512,
+      "js": {
+        "ok": true,
+        "treeHash": "69fac19500ca4d80ade01e4eab2e84a3a75b56a223f7f229c3335a8d25001f7e",
+        "highlightHash": "42ca49c68b3fad41cdeae9852318e9eb01c43f3d18aaf899e5376cf07dd21f34",
+        "processMs": 101.96110000000044
+      },
+      "wasm": {
+        "ok": true,
+        "treeHash": "69fac19500ca4d80ade01e4eab2e84a3a75b56a223f7f229c3335a8d25001f7e",
+        "highlightHash": "42ca49c68b3fad41cdeae9852318e9eb01c43f3d18aaf899e5376cf07dd21f34",
+        "processMs": 81.50130000000081
+      }
+    },
+    {
+      "kind": "comments",
+      "depth": 1024,
+      "js": {
+        "ok": true,
+        "treeHash": "d73d31875da8f25cb1e39a08a6a5bca6ae49fe447de0c2ac6ea311806837c8ac",
+        "highlightHash": "1a6cf56cb4a4eadcccd121a0eacbf524c4a425d3801f50fbbed0b158a126afc9",
+        "processMs": 81.52630000000045
+      },
+      "wasm": {
+        "ok": true,
+        "treeHash": "d73d31875da8f25cb1e39a08a6a5bca6ae49fe447de0c2ac6ea311806837c8ac",
+        "highlightHash": "1a6cf56cb4a4eadcccd121a0eacbf524c4a425d3801f50fbbed0b158a126afc9",
+        "processMs": 84.95169999999962
+      }
+    }
+  ]
+}

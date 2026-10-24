@@ -1,11 +1,12 @@
-import type { Node } from '../dist/highlights.js';
+import { replacement } from '../../kotlin-parser/dist/index.js';
+import type { Node } from './legacy-highlights.ts';
 import type { Worker } from 'node:worker_threads';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { ParserClient } from '../dist/parser-client.js';
-import { encodeTokens, replacement } from '../dist/protocol.js';
-import { highlights } from '../dist/highlights.js';
+import { encodeTokens } from '../dist/protocol.js';
+import { highlights } from './legacy-highlights.ts';
 import * as parser from '../dist/parser/kotlin-parser.mjs';
 const fixtures: { source: string; script: boolean; tree: Node }[] = JSON.parse(await readFile(new URL('../../kotlin-parser/build/oracle/parser.json', import.meta.url), 'utf8'));
 const flat = (tree: Node) => highlights(tree).flatMap(h => [h.start,h.end,h.type,h.modifiers]);
@@ -13,7 +14,11 @@ function expected(source: string, script = false) { return encodeTokens(source, 
 test('compact WASM output equals legacy classifier on every official fixture', () => {
   for (const { source, script, tree } of fixtures) {
     const id = parser.openDocument(source, script);
-    try { assert.deepEqual(JSON.parse(parser.documentHighlights(id)), flat(tree), source.slice(0,100)); }
+    try {
+      const spans = parser.documentClassifications(id);
+      assert.ok(spans instanceof Int32Array);
+      assert.deepEqual([...spans], flat(tree), source.slice(0,100));
+    }
     finally { parser.closeDocument(id); }
   }
 });
@@ -99,7 +104,7 @@ test('worker failure rejects work and the next request starts a fresh worker', a
 
 test('independent highlighting expectations survive malformed kt/kts and sequential edits', async () => {
   const { cases, typing } = await import('./highlight-cases.ts');
-  const { tokenTypes } = await import('../dist/highlights.js');
+  const { tokenTypes } = await import('../../kotlin-parser/dist/index.js');
   const client = new ParserClient();
   function decode(source: string, data: Uint32Array) {
     const lines = source.split(/\r\n|\r|\n/);
@@ -123,7 +128,7 @@ test('independent highlighting expectations survive malformed kt/kts and sequent
           const edit = replacement(previous,source);
           parser.applyDocumentEdit(id,edit.start,edit.end,edit.text);
           previous = source;
-          const compact = encodeTokens(source,JSON.parse(parser.documentHighlights(id)));
+          const compact = encodeTokens(source,parser.documentClassifications(id));
           const worker = await client.request({key:script?'test.kts':'test.kt',version:++version,source,script});
           assert.ok(worker);
           assert.deepEqual(worker,compact);
@@ -160,7 +165,7 @@ test('timeouts release active and queued jobs, circuit breaker pauses, reset rec
     assert.equal(blocked,1);
     await assert.rejects(client.request(snapshot),/paused/);
     assert.ok(!logs.join('').includes('private source') && !logs.join('').includes('secret-path'));
-    await writeFile(url, `import {parentPort} from 'node:worker_threads'; parentPort.on('message',m=>{ if(m.kind==='parse')parentPort.postMessage({request:m.request,data:new Uint32Array()}); });`);
+    await writeFile(url, `import {parentPort} from 'node:worker_threads'; parentPort.on('message',m=>{ if(m.kind==='parse')parentPort.postMessage({kind:'result',request:m.request,version:m.snapshot.version,data:new Uint32Array()}); });`);
     client.restart();
     assert.deepEqual(await client.request(snapshot),new Uint32Array());
     assert.equal(client.blocked,false);
@@ -178,4 +183,103 @@ test('repeated startup failures stop automatically and disposal settles pending 
     const pending=client.request({key:'x',version:4,source:'',script:false});
     await client.dispose(); assert.equal(await pending,undefined);
   } finally { await client.dispose(); }
+});
+
+test('incremental batches, cancelled requests, queue overflow and snapshot recovery stay in sync', async () => {
+  const client = new ParserClient();
+  let source = 'val first = "😀"\r\nval second = 20\r\nval third = 30';
+  let version = 1;
+  const snapshot = () => ({ key: 'edits', version, source, script: false });
+  try {
+    assert.deepEqual(await client.request(snapshot()), expected(source));
+    const worker = Reflect.get(client, 'worker') as Worker;
+    const sent: any[] = [];
+    const post = worker.postMessage.bind(worker);
+    worker.postMessage = ((message: any, ...rest: any[]) => { sent.push(message); post(message, ...rest); }) as typeof worker.postMessage;
+    const edit = (edits: { start: number; end: number; text: string }[]) => {
+      for (const e of edits.toSorted((a,b) => b.start-a.start)) source = source.slice(0,e.start)+e.text+source.slice(e.end);
+      client.change('edits', ++version, edits);
+    };
+    // One editor transaction: all offsets address the original string, including CRLF and UTF-16.
+    edit([{ start: source.indexOf('😀'), end: source.indexOf('😀')+2, text: '字😁' },
+      { start: source.indexOf('20'), end: source.indexOf('20')+2, text: '2000' }]);
+    assert.deepEqual(await client.request(snapshot()), expected(source));
+    assert.equal(sent.at(-1).kind, 'edit');
+    assert.equal('snapshot' in sent.at(-1), false);
+    const pending = [];
+    for (let i=0;i<20;i++) {
+      edit([{start:source.length,end:source.length,text:'\nval n'+i+' = '+i}]);
+      pending.push(client.request(snapshot()));
+    }
+    const values = await Promise.all(pending);
+    assert.ok(values.slice(0,-1).every(value => value === undefined));
+    assert.deepEqual(values.at(-1), expected(source));
+    assert.ok(sent.some(message => message.kind === 'edit' && message.batches.length > 1));
+
+    // Cancellation discards a result, not the edits required by the next request.
+    edit([{start:0,end:0,text:'// before\n'}]);
+    const abort = new AbortController();
+    const cancelled = client.request(snapshot(),abort.signal);
+    abort.abort();
+    edit([{start:source.length,end:source.length,text:'\nval after = 1'}]);
+    assert.equal(await cancelled,undefined);
+    assert.deepEqual(await client.request(snapshot()),expected(source));
+
+    // Simulate lost Worker state without changing the client's document version.
+    post({kind:'close',key:'edits'});
+    edit([{start:source.length,end:source.length,text:'\n// recover'}]);
+    assert.deepEqual(await client.request(snapshot()),expected(source));
+    assert.deepEqual(sent.slice(-2).map(m=>m.kind),['edit','parse']);
+
+    for(let i=0;i<70;i++) edit([{start:source.length,end:source.length,text:' '}]);
+    assert.deepEqual(await client.request(snapshot()),expected(source));
+    assert.equal(sent.at(-1).kind,'parse');
+
+    // A missed change notification/version gap must fall back to a snapshot.
+    source = 'val externallyReloaded = "😀"'; version += 3;
+    assert.deepEqual(await client.request(snapshot()),expected(source));
+    assert.equal(sent.at(-1).kind,'parse');
+    client.restart();
+    assert.deepEqual(await client.request(snapshot()),expected(source));
+  } finally { await client.dispose(); }
+});
+
+test('worker rejects a mismatched edit without mutating its document', async () => {
+  const { Worker } = await import('node:worker_threads');
+  const { once } = await import('node:events');
+  const worker = new Worker(new URL('../dist/parser-worker.js',import.meta.url));
+  const send = async (message: unknown) => {
+    const reply = once(worker,'message'); worker.postMessage(message); return (await reply)[0];
+  };
+  try {
+    await once(worker,'message');
+    const source = 'val value = 1';
+    await send({kind:'parse',request:1,snapshot:{key:'x',version:7,source,script:false}});
+    assert.deepEqual(await send({kind:'edit',request:2,key:'x',baseVersion:6,version:8,script:false,
+      batches:[[{start:0,end:source.length,text:'class Wrong'}]]}),{kind:'resync',request:2});
+    const result = await send({kind:'edit',request:3,key:'x',baseVersion:7,version:8,script:false,
+      batches:[[{start:source.length-1,end:source.length,text:'2'}]]});
+    assert.equal(result.version,8);
+    assert.deepEqual(result.data,expected('val value = 2'));
+  } finally { await worker.terminate(); }
+});
+
+test('queued insertions and deletions across shifting UTF-16 ranges match fresh parsing', async () => {
+  const client = new ParserClient();
+  let source='class A {}\nval x = "😀"\r\nfun f() = 1',version=1,seed=12345;
+  const random=(n:number)=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed%n;};
+  const inserts=['','x','\nval b = 2\n','😀','/*','*/','"','{}'];
+  const snapshot=()=>({key:'random',version,source,script:false});
+  try {
+    await client.request(snapshot());
+    for(let group=0;group<100;group++) {
+      for(let step=0;step<8;step++) {
+        const start=random(source.length+1),end=start+random(source.length-start+1);
+        const text=inserts[random(inserts.length)];
+        source=source.slice(0,start)+text+source.slice(end);
+        client.change('random',++version,[{start,end,text}]);
+      }
+      assert.deepEqual(await client.request(snapshot()),expected(source),'group '+group);
+    }
+  } finally {await client.dispose();}
 });

@@ -1,37 +1,21 @@
-name: CI and Release
+name: Release
 on:
-  pull_request:
   push:
-    branches:
-      - '**'
     tags:
       - 'v*'
 permissions:
   contents: read
 concurrency:
-  group: ci-${{ github.event_name }}-${{ github.ref }}
+  group: release-${{ github.ref }}
   cancel-in-progress: false
 jobs:
-  test:
-    outputs:
-      node: ${{ steps.versions.outputs.node }}
-      pnpm: ${{ steps.versions.outputs.pnpm }}
+  build:
     timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Bootstrap native TypeScript runtime
-        uses: actions/setup-node@v7
-        with:
-          node-version: '26'
-      - id: versions
-        run: node scripts/ci-versions.ts
+      - uses: pnpm/setup@v3
       - name: Validate release tag
-        if: startsWith(github.ref, 'refs/tags/v')
         run: node scripts/release-version.ts
         env:
           RELEASE_TAG: ${{ github.ref_name }}
@@ -39,135 +23,65 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - uses: actions/setup-node@v7
-        with:
-          node-version: ${{ steps.versions.outputs.node }}
-      - uses: pnpm/action-setup@v6
-        with:
-          version: ${{ steps.versions.outputs.pnpm }}
       - uses: gradle/actions/setup-gradle@v6
-      - run: pnpm install --frozen-lockfile
       - name: Check generated lexer
-        run: |
-          pnpm generate
-          git diff --exit-code -- kotlin-parser/src/commonMain/kotlin/li/songe/kotlin/lexer
+        run: pnpm generate
+      - name: Verify generated lexer is unchanged
+        run: git diff --exit-code -- kotlin-parser/src/commonMain/kotlin/li/songe/kotlin/lexer
       - run: pnpm build
       - run: pnpm typecheck
       - run: pnpm test:built
       - name: Package VSIX
-        if: runner.os == 'Linux'
         working-directory: kotlin-vscode
-        run: |
-          mkdir -p ../build
-          pnpm dlx @vscode/vsce@4.0.0 package --no-dependencies --out ../build/kotlin-syntax.vsix
-      - name: Validate packaged VSIX
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          import json, zipfile
-          with zipfile.ZipFile('build/kotlin-syntax.vsix') as archive:
-              manifest = json.loads(archive.read('extension/package.json'))
-          publisher = manifest.get('publisher')
-          if not publisher or publisher == 'local':
-              raise SystemExit('Set a real publisher in kotlin-vscode/package.json before tagging; it must exist in both marketplaces.')
-          license_id = manifest.get('license')
-          if not license_id or license_id == 'UNLICENSED':
-              raise SystemExit('Choose a project distribution license and set package.json license before marketplace publishing.')
-          with zipfile.ZipFile('build/kotlin-syntax.vsix') as archive:
-              files = {name.lower() for name in archive.namelist()}
-              if not files.intersection({'extension/license', 'extension/license.txt', 'extension/license.md'}):
-                  raise SystemExit('Missing project license asset: LICENSE, LICENSE.txt or LICENSE.md')
-              if license_id.startswith('SEE LICENSE IN '):
-                  asset = 'extension/' + license_id.removeprefix('SEE LICENSE IN ').lower()
-                  if asset not in files:
-                      raise SystemExit(f'Missing project license asset: {asset}')
-          print(f"Validated {publisher}.{manifest['name']} {manifest['version']}")
-          PY
+        env:
+          KOTLIN_VSCODE_SKIP_BUILD: '1'
+        run: pnpm dlx @vscode/vsce@4.0.0 package --no-dependencies --out kotlin-syntax.vsix
       - name: Upload VSIX
-        if: runner.os == 'Linux'
         uses: actions/upload-artifact@v7
         with:
           name: vsix
-          path: build/kotlin-syntax.vsix
+          path: kotlin-vscode/kotlin-syntax.vsix
           if-no-files-found: error
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: test-reports-${{ matrix.os }}
+          name: test-reports-ubuntu-latest
           path: kotlin-parser/build/reports/tests/
           if-no-files-found: warn
 
   publish:
-    needs: test
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
         with:
           name: vsix
           path: release
-      - name: Extract release notes from the published VSIX
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import zipfile
-          with zipfile.ZipFile('release/kotlin-syntax.vsix') as archive:
-              entry = next(name for name in archive.namelist() if name.lower() == 'extension/changelog.md')
-              Path('release/notes.md').write_bytes(archive.read(entry))
-          PY
       - name: Publish GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          RELEASE_TAG: ${{ github.ref_name }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          asset="release/kotlin-syntax-${RELEASE_TAG#v}.vsix"
-          mv release/kotlin-syntax.vsix "$asset"
-          # Create as draft so a failed upload cannot expose an incomplete new release.
-          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release create "$RELEASE_TAG" --verify-tag --draft --title "$RELEASE_TAG" --notes-file release/notes.md
-          fi
-          gh release upload "$RELEASE_TAG" "$asset" --clobber
-          gh release edit "$RELEASE_TAG" --notes-file release/notes.md --draft=false
+        uses: softprops/action-gh-release@v3
+        with:
+          files: release/kotlin-syntax.vsix
+          body_path: kotlin-vscode/CHANGELOG.md
 
   publish-marketplace:
     name: Publish VS Code Marketplace
-    needs: test
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
     steps:
-      - uses: actions/setup-node@v7
-        with:
-          node-version: ${{ needs.test.outputs.node }}
-      - uses: pnpm/action-setup@v6
-        with:
-          version: ${{ needs.test.outputs.pnpm }}
-          run_install: false
+      - uses: actions/checkout@v7
+      - uses: pnpm/setup@v3
       - uses: actions/download-artifact@v8
         with:
           name: vsix
           path: release
-      - name: Validate publishing configuration
-        env:
-          PUBLISH_TOKEN: ${{ secrets.VSCE_PAT }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -z "$PUBLISH_TOKEN" ]; then
-            echo '::error::Configure the VSCE_PAT repository secret.'
-            exit 1
-          fi
       - name: Publish existing VSIX
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
@@ -175,34 +89,18 @@ jobs:
 
   publish-openvsx:
     name: Publish Open VSX
-    needs: test
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
     steps:
-      - uses: actions/setup-node@v7
-        with:
-          node-version: ${{ needs.test.outputs.node }}
-      - uses: pnpm/action-setup@v6
-        with:
-          version: ${{ needs.test.outputs.pnpm }}
-          run_install: false
+      - uses: actions/checkout@v7
+      - uses: pnpm/setup@v3
       - uses: actions/download-artifact@v8
         with:
           name: vsix
           path: release
-      - name: Validate publishing configuration
-        env:
-          PUBLISH_TOKEN: ${{ secrets.OVSX_PAT }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -z "$PUBLISH_TOKEN" ]; then
-            echo '::error::Configure the OVSX_PAT repository secret.'
-            exit 1
-          fi
       - name: Publish existing VSIX
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}

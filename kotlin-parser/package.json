@@ -5,8 +5,16 @@
   "type": "module",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./wasm": {
       "types": "./dist/kotlin-parser.d.mts",
       "import": "./dist/kotlin-parser.mjs"
+    },
+    "./shared": {
+      "types": "./dist/shared.d.ts",
+      "import": "./dist/shared.js"
     }
   },
   "files": [
@@ -20,11 +28,11 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lisonge/vscode-kotlin-syntax.git",
+    "url": "https://github.com/lisonge/kotlin-syntax.git",
     "directory": "kotlin-parser"
   },
-  "homepage": "https://github.com/lisonge/vscode-kotlin-syntax#readme",
+  "homepage": "https://github.com/lisonge/kotlin-syntax#readme",
   "bugs": {
-    "url": "https://github.com/lisonge/vscode-kotlin-syntax/issues"
+    "url": "https://github.com/lisonge/kotlin-syntax/issues"
   }
 }

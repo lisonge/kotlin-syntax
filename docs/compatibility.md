@@ -16,6 +16,10 @@ The differential corpus includes complete syntax trees from valid and malformed 
 
 The parser handles file and script syntax without symbol resolution, type checking, overload resolution, IR generation or code generation. The extension uses the semantic token API for syntax-derived highlighting; this is not compiler semantic analysis. Language-feature acceptance and compiler diagnostics beyond parsing are outside this compatibility claim.
 
+## Library targets
+
+The KMP library configures JVM (Java 8 bytecode, built with JDK 21) and Wasm. Android consumes the JVM JAR; the core has no Android target. Android compatibility is assumed from ordinary JVM support; there is no separate Android test suite. Native/iOS targets are not covered.
+
 ## Known limitations
 
 - Incremental parsing reuses a top-level prefix, not arbitrary subtrees or lexer state. Scripts and damaged previous trees fall back to full parsing.

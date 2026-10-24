@@ -72,6 +72,23 @@ export async function run() {
   const script = await vscode.workspace.openTextDocument(scriptPath);
   assert.equal(script.languageId, 'kotlin');
   assert.ok((await tokens(script)).some(t => t.text === 'println' && t.type === 'function'));
+  await vscode.window.showTextDocument(script);
+  const external = 'val externalValue = "😀"\nprintln(externalValue)\n';
+  const reloaded = new Promise<void>((resolve,reject) => {
+    const timer = setTimeout(() => { subscription.dispose(); reject(new Error('External file reload timed out')); }, 10_000);
+    const subscription = vscode.workspace.onDidChangeTextDocument(event => {
+      if (event.document.uri.toString() === script.uri.toString() && event.document.getText() === external) {
+        clearTimeout(timer); subscription.dispose(); resolve();
+      }
+    });
+  });
+  await fs.writeFile(scriptPath,external);
+  // Explicitly reload the disk file; the isolated host has no workspace file watcher.
+  await vscode.commands.executeCommand('workbench.action.files.revert');
+  await reloaded;
+  assert.ok((await tokens(script)).some(t=>t.text==='externalValue' && t.type==='property'));
+  await vscode.commands.executeCommand('kotlinSyntax.restartParser');
+  assert.ok((await tokens(script)).some(t=>t.text==='externalValue' && t.type==='property'));
   for (const doc of [document, script]) {
     for (const fixture of [...cases, ...typing.map(source => ({source, expected: [['x','property',source.startsWith('val')?3:1]] as [string,string,number][]}))]) {
       const change = new vscode.WorkspaceEdit();
@@ -84,6 +101,6 @@ export async function run() {
     }
   }
   await vscode.commands.executeCommand('workbench.action.closeAllEditors');
-  await fs.writeFile(path.join(import.meta.dirname, '../build/host-result.json'), JSON.stringify({ passed: true, installed: !!process.env.VSCODE_EXPECT_INSTALLED, vscode: vscode.version, assertions: ['activation', 'WASM loading', 'classification', 'multiline ranges', 'incremental edit', 'multiple edits', 'Unicode', 'script', 'burst updates', 'independent classifications', 'malformed kt/kts', 'typing and recovery'] }, null, 2));
+  await fs.writeFile(path.join(import.meta.dirname, '../build/host-result.json'), JSON.stringify({ passed: true, installed: !!process.env.VSCODE_EXPECT_INSTALLED, vscode: vscode.version, assertions: ['activation', 'WASM loading', 'classification', 'multiline ranges', 'incremental edit', 'multiple edits', 'Unicode', 'script', 'burst updates', 'independent classifications', 'malformed kt/kts', 'typing and recovery', 'external disk reload', 'restart resynchronization'] }, null, 2));
 }
 

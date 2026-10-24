@@ -10,8 +10,8 @@ for (let i=0;i<5;i++) {
   let start=performance.now(); const tokens=parser.tokenize(source); const lexer=performance.now()-start;
   start=performance.now(); const id=parser.openDocument(source,false); const parse=performance.now()-start;
   start=performance.now(); const tree=parser.documentTree(id); const serialize=performance.now()-start;
-  start=performance.now(); const spans=parser.documentHighlights(id); const highlight=performance.now()-start;
-  result.push({lexerIncludingJsonMs:lexer,parseIncludingLexerMs:parse,treeJsonMs:serialize,highlightMs:highlight,treeBytes:Buffer.byteLength(tree),spanBytes:Buffer.byteLength(spans)});
+  start=performance.now(); const spans=parser.documentClassifications(id); const highlight=performance.now()-start;
+  result.push({lexerIncludingJsonMs:lexer,parseIncludingLexerMs:parse,treeJsonMs:serialize,highlightMs:highlight,treeBytes:Buffer.byteLength(tree),spanBytes:spans.byteLength});
   parser.closeDocument(id);
 }
 await writeFile(new URL(`stages-${process.argv[2]??'before'}.json`,directory),JSON.stringify(result,null,2));

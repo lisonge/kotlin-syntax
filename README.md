@@ -1,46 +1,36 @@
 # Kotlin Syntax
 
-pnpm/Node + Gradle Kotlin DSL workspace for a portable Kotlin lexer/parser and a VS Code syntax-highlighting extension.
+[English](README.md) | [简体中文](README-zh.md)
 
-The common Kotlin implementation targets the official Kotlin syntax reference recorded in [metadata.json](kotlin-parser/upstream/metadata.json). JVM tests compare it with the official compiler; the packaged WASM module replays the verified fixtures. The extension parses in a Node Worker and provides syntax-derived semantic tokens. Compiler semantic analysis is outside the current scope.
+Kotlin Syntax is a Kotlin Multiplatform library for parsing and classifying Kotlin syntax, with a VS Code extension and an online playground powered by the same parser.
 
-## Quick start
+## Features
 
-Use the Node and pnpm versions in [package.json](package.json), JDK 21 and the checked-in Gradle Wrapper. Kotlin is pinned in [gradle/libs.versions.toml](gradle/libs.versions.toml).
+- Parse Kotlin files (`.kt`) and scripts (`.kts`) into lossless syntax trees that preserve whitespace, comments and syntax errors.
+- Produce typed syntax classifications and update documents with incremental parsing.
+- Use the library on JVM and Wasm, or integrate the JVM library into Android applications.
+- Highlight Kotlin in VS Code through a background Worker, or explore it in the React playground with the One Dark Pro theme.
 
-```sh
-pnpm install --frozen-lockfile
-pnpm build
-pnpm typecheck
-pnpm test:built
-pnpm test:extension
-```
+Tests compare parsing against the official Kotlin compiler. Highlighting is based on syntax; symbol resolution and type checking are outside the project's scope. See [compatibility and limitations](docs/compatibility.md) for the tested syntax and platform coverage.
 
-The extension-host test requires an installed VS Code; see [testing](docs/testing.md) for executable selection and isolation.
+## Modules
 
-## Commands
-
-| Command | Purpose |
-|---|---|
-| `pnpm build` | Build WASM package and extension assets |
-| `pnpm typecheck` | Check TypeScript without emitting JavaScript |
-| `pnpm test` | JVM/WASM tests, official fixture replay and extension/Worker tests |
-| `pnpm test:built` | Run tests using existing build assets; run `pnpm build` first |
-| `pnpm test:extension` | Test the built extension in an installed VS Code host |
-| `pnpm generate` | Regenerate lexer tables/actions from verified upstream input |
-| `pnpm benchmark` | Compare legacy, compact and Worker pipelines |
-| `pnpm benchmark:builder` | Compare captured baseline and current parser builds |
+| Module | Purpose |
+| --- | --- |
+| [kotlin-parser](kotlin-parser/) | Portable parser, syntax trees, incremental documents and syntax classifications |
+| [kotlin-vscode](kotlin-vscode/) | VS Code extension using the parser in a Worker |
+| [kotlin-website](kotlin-website/) | Interactive playground using the same parser |
 
 ## Documentation
 
-- [Architecture and APIs](docs/architecture.md): module boundaries, incremental documents, WASM and Worker flow.
-- [Compatibility](docs/compatibility.md): tested syntax target, coverage and known limitations.
-- [Testing](docs/testing.md): focused checks, official differential evidence and CI coverage.
-- [Upstream upgrades](docs/upstream-upgrade.md): source pins, generation and validation procedure.
-- [Benchmarks](benchmarks/README.md): commands, temporary output and historical reports.
-
-`kotlin-parser/` contains the KMP implementation and compiler oracle tests; `kotlin-vscode/` contains the extension. Generated packages live in each module's `dist/`; transient outputs live under `build/`. Handwritten Node entry points run as native TypeScript.
+- [Kotlin and Android integration](docs/kotlin-api.md)
+- [Local development and builds](docs/development.md)
+- [Architecture](docs/architecture.md)
+- [Compatibility and limitations](docs/compatibility.md)
+- [Testing and releases](docs/testing.md)
+- [Upstream upgrades](docs/upstream-upgrade.md)
+- [Benchmarks](benchmarks/README.md)
 
 ## License
 
-Licensed under [Apache-2.0](LICENSE).
+[Apache-2.0](LICENSE).

@@ -13,7 +13,7 @@ pnpm dev:website
 
 Requires a browser supporting Wasm GC and exception handling. Code stays in memory in the browser; reloading restores the example. Highlighting classifies syntax, without symbol resolution or type checking. The status bar reports parse/highlight time, excluding Worker transport and rendering.
 
-Generated Kotlin `.mjs` and `.wasm` files are copied unchanged to ignored `public/parser/` assets before dev/build. Relative URLs support deployment under a subdirectory. No remote service is required.
+The Worker imports `kotlin-parser/wasm` directly. Vite tracks the generated Kotlin modules and emits the referenced WASM asset with a hashed filename; no parser assets are copied to `public/`. Relative URLs support deployment under a subdirectory. No remote service is required.
 
 The English UI lists all 19 token types and 5 modifiers shared with the VS Code extension. The pinned upstream theme, source commit and MIT license are in `vendor/one-dark-pro/`. Token styling applies the theme's semantic selectors for Kotlin, then VS Code's built-in single-scope TextMate fallback probes, including readonly variables/properties. Editor colors also come from the theme. Run `pnpm --filter kotlin-website test` for mapping regression checks.
 

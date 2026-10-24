@@ -8,3 +8,8 @@ kotlin-js-store/
 **/dist/
 .tools/
 *.vsix
+
+kotlin-website/src/generated/
+
+kotlin-parser/js/generated/
+local.properties

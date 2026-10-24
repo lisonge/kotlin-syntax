@@ -29,7 +29,10 @@ if(!mode) {
 }
 if(!['before','after'].includes(mode)) throw new Error('Unknown mode');
 const moduleUrl=mode==='before'?pathToFileURL(resolve(process.env.BUILDER_BASELINE_DIR??'build/parser-before','kotlin-parser.mjs')):new URL('../kotlin-vscode/dist/parser/kotlin-parser.mjs',import.meta.url);
-const parser=await import(moduleUrl.href);
+const parser=mode==='before'
+  ? await import(moduleUrl.href)
+  : await import('../kotlin-vscode/dist/parser/kotlin-parser.mjs');
+const classify = mode === 'before' ? parser.documentHighlights : parser.documentClassifications;
 const samples=Number(process.env.BUILDER_SAMPLES??10);
 if(!Number.isSafeInteger(samples)||samples<1) throw new Error('Invalid sample count');
 const hash=(value: string | Uint8Array)=>createHash('sha256').update(value).digest('hex');
@@ -50,9 +53,11 @@ for(const [name,source] of sources){
   const id=parser.openDocument(source,false);
   try {
     const serialize=measure(()=>parser.documentTree(id));
-    const highlight=measure(()=>parser.documentHighlights(id));
+    const highlight=measure(()=>classify(id));
     const lexer=measure(()=>parser.tokenize(source));
-    cases.push({name,length:source.length,sourceHash:hash(source),treeHash:hash(parser.documentTree(id)),highlightHash:hash(parser.documentHighlights(id)),parse,serialize,highlight,lexer});
+    const spans = classify(id);
+    const normalized = typeof spans === 'string' ? JSON.parse(spans) : Array.from(spans);
+    cases.push({name,length:source.length,sourceHash:hash(source),treeHash:hash(parser.documentTree(id)),highlightHash:hash(JSON.stringify(normalized)),parse,serialize,highlight,lexer});
   }finally{parser.closeDocument(id);}
 }
 const report={mode,node:process.version,measuredAt:new Date().toISOString(),samples,wasmHash:hash(await readFile(new URL('kotlin-parser.wasm',moduleUrl))),cases};

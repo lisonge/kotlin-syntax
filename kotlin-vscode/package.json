@@ -9,6 +9,7 @@
     "vscode": "^1.141.0"
   },
   "scripts": {
+    "vscode:prepublish": "node scripts/prepublish.ts",
     "build": "node scripts/build.ts",
     "test:host": "node scripts/test-host.ts",
     "test": "node --test test/bundle.ts test/worker.ts"
@@ -67,11 +68,11 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lisonge/vscode-kotlin-syntax.git",
+    "url": "https://github.com/lisonge/kotlin-syntax.git",
     "directory": "kotlin-vscode"
   },
-  "homepage": "https://github.com/lisonge/vscode-kotlin-syntax#readme",
+  "homepage": "https://github.com/lisonge/kotlin-syntax#readme",
   "bugs": {
-    "url": "https://github.com/lisonge/vscode-kotlin-syntax/issues"
+    "url": "https://github.com/lisonge/kotlin-syntax/issues"
   }
 }

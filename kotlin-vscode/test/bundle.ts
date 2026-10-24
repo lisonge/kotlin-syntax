@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { highlights, tokenTypes, tokenDelta } from '../dist/highlights.js';
+import { highlights } from './legacy-highlights.ts';
+import { tokenTypes } from '../../kotlin-parser/dist/index.js';
+import { tokenDelta } from '../dist/highlights.js';
 import * as parser from '../dist/parser/kotlin-parser.mjs';
 test('semantic token deltas reconstruct every update', () => {
   const arrays = [[], [0, 1, 2, 3, 4], [0, 1, 3, 3, 4], [0, 1, 2, 3, 4, 1, 0, 2, 2, 0], [2, 0, 1, 1, 0]];
@@ -28,4 +30,16 @@ test('syntax classifications and nonoverlapping UTF-16 spans', () => {
   for (const span of spans) { assert.ok(span.start >= previous && span.end <= source.length); previous = span.end; }
   for (const [text, type] of [['Anno', 'decorator'], ['Box', 'class'], ['T', 'typeParameter'], ['call', 'method'], ['p', 'parameter'], ['Service', 'interface']])
     assert.ok(spans.some(s => source.slice(s.start, s.end) === text && tokenTypes[s.type] === type), `${text}: ${type}`);
+});
+
+test('packaged lexer, file and script entry points', () => {
+  const { tokenize, parseFile, parseScript } = parser;
+  assert.ok(JSON.parse(tokenize('val answer = 42')).length);
+  const tree = JSON.parse(parseFile('@file:JvmName("Sample")\npackage sample\nimport kotlin.Int\n@A(types = [String::class]) class Box(val value: Int)\nfun String?.apply(action: context(Logger) (Int) -> Unit) { if (this != null) action(1) }'));
+  assert.equal(tree.kind, 'KT_FILE');
+  for (const kind of ['CLASS', 'FUN', 'FILE_ANNOTATION_LIST']) {
+    assert.ok(tree.children.some((node: { kind: string }) => node.kind === kind), kind);
+  }
+  const script = JSON.parse(parseScript('val f = { x: Int -> x + 1 }\nprintln(f(2))'));
+  assert.ok(script.children.some((node: { kind: string }) => node.kind === 'SCRIPT'));
 });

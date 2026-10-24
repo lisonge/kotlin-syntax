@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { tokenStyle as resolveStyle } from '../scripts/resolve-theme.ts';
 import { tokenClass, tokenStyle, tokenRules } from '../src/token-theme.ts';
-import { tokenTypes, tokenModifiers } from '../../kotlin-vscode/src/highlights.ts';
+import { tokenTypes, tokenModifiers } from 'kotlin-parser/shared';
 
 test('One Dark Pro semantic overrides and VS Code scope fallbacks', () => {
   // Independent expectations from the pinned official theme and VS Code probes.
@@ -30,6 +31,6 @@ test('every parser token and modifier combination has a decoration style', () =>
   assert.equal(tokenTypes.length, 19);
   assert.equal(tokenModifiers.length, 5);
   for (const type of tokenTypes) for (let bits = 0; bits < 32; bits++) {
-    assert.ok(tokenRules[`.${tokenClass(type, bits)}`]);
+    assert.deepEqual(tokenRules[`.${tokenClass(type, bits)}`], resolveStyle(type, bits));
   }
 });

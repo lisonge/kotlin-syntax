@@ -1,9 +1,10 @@
 import type * as VSCode from 'vscode';
 import { createRequire } from 'node:module';
 const vscode: typeof VSCode = createRequire(import.meta.url)('vscode');
-export async function activate(context: VSCode.ExtensionContext) {
+export async function activate(context: VSCode.ExtensionContext): Promise<void> {
   const { ParserClient } = await import('./parser-client.ts');
-  const { tokenTypes, tokenModifiers, tokenDelta } = await import('./highlights.ts');
+  const { tokenDelta } = await import('./highlights.ts');
+  const { tokenTypes, tokenModifiers } = await import('kotlin-parser/shared');
   const output = vscode.window.createOutputChannel('Kotlin Syntax', { log: true });
   context.subscriptions.push(output);
   output.info(`Activating Kotlin Syntax ${context.extension.packageJSON.version}; Node ${process.version}`);
@@ -60,7 +61,8 @@ export async function activate(context: VSCode.ExtensionContext) {
     }, legend),
     vscode.workspace.onDidChangeTextDocument(event => {
       if (event.document.languageId !== 'kotlin' || !event.contentChanges.length) return;
-      client.invalidate(event.document.uri.toString());
+      client.change(event.document.uri.toString(), event.document.version,
+        event.contentChanges.map(change => ({ start: change.rangeOffset, end: change.rangeOffset + change.rangeLength, text: change.text })));
       changed.fire();
     }),
     vscode.workspace.onDidCloseTextDocument(document => {

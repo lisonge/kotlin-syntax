@@ -1,0 +1,48 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches:
+      - '**'
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  test:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/setup@v3
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Check generated lexer
+        run: pnpm generate
+      - name: Verify generated lexer is unchanged
+        run: git diff --exit-code -- kotlin-parser/src/commonMain/kotlin/li/songe/kotlin/lexer
+      - run: pnpm build
+      - run: pnpm typecheck
+      - run: pnpm test:built
+      - name: Package VSIX
+        working-directory: kotlin-vscode
+        env:
+          KOTLIN_VSCODE_SKIP_BUILD: '1'
+        run: pnpm dlx @vscode/vsce@4.0.0 package --no-dependencies --out kotlin-syntax.vsix
+      - name: Upload VSIX
+        uses: actions/upload-artifact@v7
+        with:
+          name: vsix
+          path: kotlin-vscode/kotlin-syntax.vsix
+          if-no-files-found: error
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-reports-ubuntu-latest
+          path: kotlin-parser/build/reports/tests/
+          if-no-files-found: warn
