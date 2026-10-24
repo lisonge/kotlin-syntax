@@ -1,0 +1,109 @@
+{
+  "mode": "legacy-full-tree-json",
+  "node": "v26.12.1",
+  "cpu": "Intel(R) Core(TM) i9-14900HX",
+  "samples": 5,
+  "warmup": 3,
+  "moduleLoadMs": 4.710100000000001,
+  "results": [
+    {
+      "name": "synthetic-10KiB",
+      "utf16Length": 10312,
+      "sha256": "437a179c9b5962083497f0a48c728d730a7d9df944e4b338475ab9066dcfe6cb",
+      "full": {
+        "p50Ms": 42.28680000000003,
+        "p95Ms": 48.7029,
+        "p99Ms": 48.7029,
+        "maxMs": 48.7029,
+        "timerP95Ms": 48.874300000000005,
+        "peakProcessRssMiB": 127.1171875
+      },
+      "edits": {
+        "front": {
+          "p50Ms": 40.93920000000003,
+          "p95Ms": 42.348299999999995,
+          "p99Ms": 42.348299999999995,
+          "maxMs": 42.348299999999995,
+          "timerP95Ms": 42.383699999999976,
+          "peakProcessRssMiB": 136.29296875,
+          "treePayloadBytes": 544632
+        },
+        "tail": {
+          "p50Ms": 13.222800000000007,
+          "p95Ms": 15.569799999999987,
+          "p99Ms": 15.569799999999987,
+          "maxMs": 15.569799999999987,
+          "timerP95Ms": 15.600299999999947,
+          "peakProcessRssMiB": 139.0859375,
+          "treePayloadBytes": 544341
+        }
+      }
+    },
+    {
+      "name": "synthetic-100KiB",
+      "utf16Length": 102452,
+      "sha256": "999733f669e6ae2de7f985270cc50ce7c57f9ae3ef4b999076bce4064a9f37d2",
+      "full": {
+        "p50Ms": 2486.907000000001,
+        "p95Ms": 2645.2806,
+        "p99Ms": 2645.2806,
+        "maxMs": 2645.2806,
+        "timerP95Ms": 2645.3092000000015,
+        "peakProcessRssMiB": 355.2578125
+      },
+      "edits": {
+        "front": {
+          "p50Ms": 2669.487199999996,
+          "p95Ms": 2692.053199999995,
+          "p99Ms": 2692.053199999995,
+          "maxMs": 2692.053199999995,
+          "timerP95Ms": 2692.086899999995,
+          "peakProcessRssMiB": 318.765625,
+          "treePayloadBytes": 5434856
+        },
+        "tail": {
+          "p50Ms": 195.6814000000013,
+          "p95Ms": 200.45820000000094,
+          "p99Ms": 200.45820000000094,
+          "maxMs": 200.45820000000094,
+          "timerP95Ms": 200.4951000000001,
+          "peakProcessRssMiB": 444.95703125,
+          "treePayloadBytes": 5434565
+        }
+      }
+    },
+    {
+      "name": "parser-source",
+      "utf16Length": 68346,
+      "sha256": "a0492571ba8c74dc8192552842d43356dc00befd61bb14c73598c8757c05b85b",
+      "full": {
+        "p50Ms": 1046.3961000000054,
+        "p95Ms": 1078.3448999999964,
+        "p99Ms": 1078.3448999999964,
+        "maxMs": 1078.3448999999964,
+        "timerP95Ms": 1078.3740000000034,
+        "peakProcessRssMiB": 433.66015625
+      },
+      "edits": {
+        "front": {
+          "p50Ms": 1635.5102000000043,
+          "p95Ms": 1910.3092000000033,
+          "p99Ms": 1910.3092000000033,
+          "maxMs": 1910.3092000000033,
+          "timerP95Ms": 1910.7839999999997,
+          "peakProcessRssMiB": 267.41796875,
+          "treePayloadBytes": 2734676
+        },
+        "tail": {
+          "p50Ms": 1272.1875,
+          "p95Ms": 1329.2016999999905,
+          "p99Ms": 1329.2016999999905,
+          "maxMs": 1329.2016999999905,
+          "timerP95Ms": 1329.2320999999938,
+          "peakProcessRssMiB": 318.515625,
+          "treePayloadBytes": 2734297
+        }
+      }
+    }
+  ]
+}

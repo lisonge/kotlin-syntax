@@ -1,0 +1,6 @@
+packages:
+  - kotlin-parser
+  - kotlin-vscode
+  - kotlin-website
+allowBuilds:
+  esbuild: true

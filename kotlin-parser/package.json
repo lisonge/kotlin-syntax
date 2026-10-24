@@ -1,0 +1,30 @@
+{
+  "name": "kotlin-parser",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/kotlin-parser.d.mts",
+      "import": "./dist/kotlin-parser.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "generate": "node scripts/generate-lexer.ts",
+    "build": "node scripts/build.ts",
+    "test:bundle": "node scripts/test-bundle.ts"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lisonge/vscode-kotlin-syntax.git",
+    "directory": "kotlin-parser"
+  },
+  "homepage": "https://github.com/lisonge/vscode-kotlin-syntax#readme",
+  "bugs": {
+    "url": "https://github.com/lisonge/vscode-kotlin-syntax/issues"
+  }
+}

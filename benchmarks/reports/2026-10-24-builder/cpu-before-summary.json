@@ -1,0 +1,102 @@
+[
+  {
+    "function": "li.songe.kotlin.builder.Marker.drop",
+    "samples": 2898,
+    "percent": 40.38
+  },
+  {
+    "function": "li.songe.kotlin.builder.Marker.finish",
+    "samples": 2696,
+    "percent": 37.57
+  },
+  {
+    "function": "kotlin.collections.ArrayList.indexOf",
+    "samples": 360,
+    "percent": 5.02
+  },
+  {
+    "function": "(garbage collector)",
+    "samples": 301,
+    "percent": 4.19
+  },
+  {
+    "function": "li.songe.kotlin.builder.Marker.rollbackTo",
+    "samples": 297,
+    "percent": 4.14
+  },
+  {
+    "function": "li.songe.kotlin.parsing.DeclarationParser.closureArguments",
+    "samples": 73,
+    "percent": 1.02
+  },
+  {
+    "function": "li.songe.kotlin.builder.SyntaxBuilder.skip",
+    "samples": 71,
+    "percent": 0.99
+  },
+  {
+    "function": "li.songe.kotlin.parsing.DeclarationParser.modifierList",
+    "samples": 42,
+    "percent": 0.59
+  },
+  {
+    "function": "kotlin.String.equals",
+    "samples": 37,
+    "percent": 0.52
+  },
+  {
+    "function": "kotlin.text.appendElement",
+    "samples": 33,
+    "percent": 0.46
+  },
+  {
+    "function": "li.songe.kotlin.parsing.DeclarationParser.at",
+    "samples": 27,
+    "percent": 0.38
+  },
+  {
+    "function": "",
+    "samples": 25,
+    "percent": 0.35
+  },
+  {
+    "function": "li.songe.kotlin.tree.jsonString",
+    "samples": 20,
+    "percent": 0.28
+  },
+  {
+    "function": "li.songe.kotlin.builder.SyntaxBuilder.<get-tokenText>",
+    "samples": 14,
+    "percent": 0.2
+  },
+  {
+    "function": "kotlin.collections.HashMap.<init>",
+    "samples": 14,
+    "percent": 0.2
+  },
+  {
+    "function": "kotlin.String.hashCode",
+    "samples": 12,
+    "percent": 0.17
+  },
+  {
+    "function": "kotlin.collections.HashMap.hash",
+    "samples": 11,
+    "percent": 0.15
+  },
+  {
+    "function": "kotlin.collections.joinToString$default",
+    "samples": 11,
+    "percent": 0.15
+  },
+  {
+    "function": "kotlin.collections.HashMap.findKey",
+    "samples": 10,
+    "percent": 0.14
+  },
+  {
+    "function": "li.songe.kotlin.builder.SemanticBuilder.joined",
+    "samples": 10,
+    "percent": 0.14
+  }
+]

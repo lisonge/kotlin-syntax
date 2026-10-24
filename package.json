@@ -1,0 +1,41 @@
+{
+  "name": "vscode-kotlin-syntax-workspace",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:website": "pnpm --filter kotlin-parser build && pnpm --filter kotlin-website dev",
+    "build": "pnpm -r --sort run build",
+    "test": "pnpm build && pnpm test:built",
+    "generate": "pnpm --filter kotlin-parser generate",
+    "typecheck": "tsc -p tsconfig.json && tsc -p kotlin-vscode/tsconfig.json --noEmit && pnpm --filter kotlin-website typecheck",
+    "test:extension": "pnpm --filter kotlin-vscode test:host",
+    "benchmark": "node benchmarks/parser.ts",
+    "benchmark:builder": "node benchmarks/builder.ts",
+    "test:built": "node scripts/gradle.ts :kotlin-parser:jvmTest :kotlin-parser:wasmJsNodeTest && pnpm --filter kotlin-parser test:bundle && pnpm --filter kotlin-vscode test && pnpm --filter kotlin-website test"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.15.0",
+      "onFail": "error"
+    },
+    "runtime": {
+      "name": "node",
+      "version": "26.12.1",
+      "onFail": "warn"
+    }
+  },
+  "devDependencies": {
+    "@types/node": "26.6.5",
+    "typescript": "7.0.2"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lisonge/vscode-kotlin-syntax.git"
+  },
+  "homepage": "https://github.com/lisonge/vscode-kotlin-syntax#readme",
+  "bugs": {
+    "url": "https://github.com/lisonge/vscode-kotlin-syntax/issues"
+  }
+}

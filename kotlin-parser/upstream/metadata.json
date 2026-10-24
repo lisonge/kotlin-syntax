@@ -1,0 +1,29 @@
+{
+  "commit": "9180ce6a7a7d3627f88b424717583f28ddca052d",
+  "lexerPath": "compiler/psi/parser/src/org/jetbrains/kotlin/lexer/_JetLexer.java",
+  "version": "2.4.21",
+  "lexerSha256": "95b13011805f485c3a0c2789c0debbdf7f70118f359c1895102abb30fd9b0424",
+  "repository": "https://github.com/JetBrains/kotlin",
+  "parserSources": [
+    {
+      "path": "compiler/psi/parser/src/org/jetbrains/kotlin/parsing/AbstractKotlinParsing.java",
+      "sha256": "ee755d9afc92737761fa87e108ec966d985fba9f42a808000e10ce55fae43def"
+    },
+    {
+      "path": "compiler/psi/parser/src/org/jetbrains/kotlin/parsing/KotlinExpressionParsing.java",
+      "sha256": "d526cf973efd6ffd9b651c388be564b3d5c9257127a02937f6244797bd863f1f"
+    },
+    {
+      "path": "compiler/psi/parser/src/org/jetbrains/kotlin/parsing/KotlinParsing.java",
+      "sha256": "a3e9b24b71398b0b9aa8823151afdbfc9a2cd0dca6677105da3b96943fcff754"
+    },
+    {
+      "path": "compiler/psi/parser/src/org/jetbrains/kotlin/parsing/KotlinWhitespaceAndCommentsBinders.kt",
+      "sha256": "5c30f41adf8b001e37237f6415077cb6ef669172f5746a571b5428bf45fc79cb"
+    },
+    {
+      "path": "compiler/psi/parser/src/org/jetbrains/kotlin/parsing/SemanticWhitespaceAwarePsiBuilderImpl.java",
+      "sha256": "f85f19b2b089e2129de20c19c18d124f074bae98c404b3915a477d2bb8375fa5"
+    }
+  ]
+}

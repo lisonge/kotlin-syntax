@@ -1,0 +1,163 @@
+{
+  "mode": "worker",
+  "node": "v26.12.1",
+  "cpu": "Intel(R) Core(TM) i9-14900HX",
+  "moduleLoadMs": 0.03330000000000055,
+  "warmup": 2,
+  "results": [
+    {
+      "name": "synthetic-10KiB",
+      "utf16Length": 10322,
+      "sha256": "b07c6904bf1e9bf4c9f4c5242f4cabde5b553f1ecc98f490a283ca686e92417a",
+      "coldFirstResultMs": 80.53519999999999,
+      "full": {
+        "samples": 20,
+        "p50Ms": 34.412199999999984,
+        "p95Ms": 40.6858,
+        "p99Ms": 43.251300000000015,
+        "timerP95Ms": 14.558099999999968,
+        "peakProcessRssMiB": 136.6640625,
+        "checksum": "6cb576c144cf5f9e3873348d6f9f5342cde8a1a0cbe7e33859525bd8882dc984",
+        "outputBytes": 36720
+      },
+      "front": {
+        "samples": 20,
+        "p50Ms": 34.77260000000001,
+        "p95Ms": 36.43540000000007,
+        "p99Ms": 37.81819999999993,
+        "timerP95Ms": 15.357899999999972,
+        "peakProcessRssMiB": 138.42578125,
+        "checksum": "6cb576c144cf5f9e3873348d6f9f5342cde8a1a0cbe7e33859525bd8882dc984",
+        "outputBytes": 36720,
+        "wasmPayloadBytes": null
+      },
+      "tail": {
+        "samples": 20,
+        "p50Ms": 1.4611999999999625,
+        "p95Ms": 1.7493999999999232,
+        "p99Ms": 2.0272999999999683,
+        "timerP95Ms": 1.7571000000000367,
+        "peakProcessRssMiB": 140.84375,
+        "checksum": "6cb576c144cf5f9e3873348d6f9f5342cde8a1a0cbe7e33859525bd8882dc984",
+        "outputBytes": 36720,
+        "wasmPayloadBytes": null
+      },
+      "cached": {
+        "samples": 20,
+        "p50Ms": 0.2979000000000269,
+        "p95Ms": 0.7664999999999509,
+        "p99Ms": 0.9889999999998054,
+        "timerP95Ms": 15.95979999999986,
+        "peakProcessRssMiB": 141.49609375,
+        "checksum": "6cb576c144cf5f9e3873348d6f9f5342cde8a1a0cbe7e33859525bd8882dc984",
+        "outputBytes": 36720
+      },
+      "burst": {
+        "samples": 20,
+        "p50Ms": 4.693399999999883,
+        "p95Ms": 7.081699999999955,
+        "p99Ms": 7.1935000000000855,
+        "timerP95Ms": 3.4767000000001644,
+        "peakProcessRssMiB": 140.90625,
+        "checksum": "6cb576c144cf5f9e3873348d6f9f5342cde8a1a0cbe7e33859525bd8882dc984",
+        "outputBytes": 36720
+      }
+    },
+    {
+      "name": "synthetic-100KiB",
+      "utf16Length": 102462,
+      "sha256": "86d2c2f08b4b2183d48f5bc27555a6107bf38fa1d77ac72519810fadd0a6d464",
+      "coldFirstResultMs": 2714.4635,
+      "full": {
+        "samples": 5,
+        "p50Ms": 2759.5461000000014,
+        "p95Ms": 2794.9969,
+        "p99Ms": 2794.9969,
+        "timerP95Ms": 13.633900000000722,
+        "peakProcessRssMiB": 179.05078125,
+        "checksum": "10169252cb0376a61cd39c5b6674ed113cd6a92827527334d13f48812b0f0ba5",
+        "outputBytes": 356820
+      },
+      "front": {
+        "samples": 5,
+        "p50Ms": 2710.5325999999986,
+        "p95Ms": 2892.214899999999,
+        "p99Ms": 2892.214899999999,
+        "timerP95Ms": 15.544499999996333,
+        "peakProcessRssMiB": 195.6796875,
+        "checksum": "10169252cb0376a61cd39c5b6674ed113cd6a92827527334d13f48812b0f0ba5",
+        "outputBytes": 356820,
+        "wasmPayloadBytes": null
+      },
+      "tail": {
+        "samples": 5,
+        "p50Ms": 13.661000000000058,
+        "p95Ms": 14.41320000000269,
+        "p99Ms": 14.41320000000269,
+        "timerP95Ms": 13.19770000000426,
+        "peakProcessRssMiB": 197.8203125,
+        "checksum": "10169252cb0376a61cd39c5b6674ed113cd6a92827527334d13f48812b0f0ba5",
+        "outputBytes": 356820,
+        "wasmPayloadBytes": null
+      },
+      "cached": {
+        "samples": 5,
+        "p50Ms": 0.3316000000049826,
+        "p95Ms": 0.6410000000032596,
+        "p99Ms": 0.6410000000032596,
+        "timerP95Ms": 15.293100000002596,
+        "peakProcessRssMiB": 200.09375,
+        "checksum": "10169252cb0376a61cd39c5b6674ed113cd6a92827527334d13f48812b0f0ba5",
+        "outputBytes": 356820
+      }
+    },
+    {
+      "name": "parser-source",
+      "utf16Length": 68378,
+      "sha256": "eed4b77e207f9deaa63736e82a4c3c1e7614340379b49bcb1284abf8f0c64e20",
+      "coldFirstResultMs": 1155.929799999998,
+      "full": {
+        "samples": 5,
+        "p50Ms": 1152.797799999993,
+        "p95Ms": 1168.6235000000015,
+        "p99Ms": 1168.6235000000015,
+        "timerP95Ms": 16.371100000003935,
+        "peakProcessRssMiB": 199.05859375,
+        "checksum": "b46315134c49db08cdcfffa8126764580f2b2892e051d1f947fcce64086716d0",
+        "outputBytes": 184480
+      },
+      "front": {
+        "samples": 5,
+        "p50Ms": 1174.1635000000024,
+        "p95Ms": 1290.9904000000024,
+        "p99Ms": 1290.9904000000024,
+        "timerP95Ms": 16.361000000004424,
+        "peakProcessRssMiB": 197.90625,
+        "checksum": "b46315134c49db08cdcfffa8126764580f2b2892e051d1f947fcce64086716d0",
+        "outputBytes": 184480,
+        "wasmPayloadBytes": null
+      },
+      "tail": {
+        "samples": 5,
+        "p50Ms": 1168.9336999999941,
+        "p95Ms": 1213.6681000000099,
+        "p99Ms": 1213.6681000000099,
+        "timerP95Ms": 11.268400000000838,
+        "peakProcessRssMiB": 163.203125,
+        "checksum": "b46315134c49db08cdcfffa8126764580f2b2892e051d1f947fcce64086716d0",
+        "outputBytes": 184480,
+        "wasmPayloadBytes": null
+      },
+      "cached": {
+        "samples": 5,
+        "p50Ms": 0.24469999999564607,
+        "p95Ms": 0.7439000000013039,
+        "p99Ms": 0.7439000000013039,
+        "timerP95Ms": 15.506599999993341,
+        "peakProcessRssMiB": 152.37890625,
+        "checksum": "b46315134c49db08cdcfffa8126764580f2b2892e051d1f947fcce64086716d0",
+        "outputBytes": 184480
+      }
+    }
+  ]
+}

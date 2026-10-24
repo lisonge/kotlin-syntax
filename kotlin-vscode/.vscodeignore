@@ -1,0 +1,11 @@
+**/*
+!package.json
+!language-configuration.json
+!dist/**/*.js
+!dist/**/*.mjs
+!dist/**/*.wasm
+!README.md
+!CHANGELOG.md
+!LICENSE
+!LICENSE.txt
+!LICENSE.md

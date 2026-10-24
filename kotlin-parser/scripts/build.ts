@@ -1,0 +1,12 @@
+import { spawnSync } from 'node:child_process';
+import { cp, mkdir, rm } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+const root = fileURLToPath(new URL('../../', import.meta.url));
+const result = spawnSync(process.execPath, ['scripts/gradle.ts', ':kotlin-parser:compileProductionExecutableKotlinWasmJs'], { cwd: root, stdio: 'inherit' });
+if (result.status !== 0) process.exit(result.status ?? 1);
+const out = new URL('../dist/', import.meta.url);
+if (dirname(fileURLToPath(out).replace(/[\\/]$/, '')) !== resolve(root, 'kotlin-parser')) throw new Error('Unexpected output directory');
+await rm(out, { recursive: true, force: true });
+await mkdir(out, { recursive: true });
+await cp(new URL('../build/compileSync/wasmJs/main/productionExecutable/kotlin/', import.meta.url), out, { recursive: true });

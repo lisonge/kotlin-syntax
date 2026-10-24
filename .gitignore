@@ -1,0 +1,10 @@
+node_modules/
+kotlin-js-store/
+.gradle/
+.kotlin/
+.vscode/
+.idea/
+**/build/
+**/dist/
+.tools/
+*.vsix

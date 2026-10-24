@@ -1,0 +1,77 @@
+{
+  "name": "kotlin-vscode",
+  "displayName": "Kotlin Syntax",
+  "description": "Kotlin syntax support powered by a portable Kotlin lexer and parser.",
+  "version": "0.0.2",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "vscode": "^1.141.0"
+  },
+  "scripts": {
+    "build": "node scripts/build.ts",
+    "test:host": "node scripts/test-host.ts",
+    "test": "node --test test/bundle.ts test/worker.ts"
+  },
+  "dependencies": {
+    "kotlin-parser": "workspace:*"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "kotlin",
+        "aliases": [
+          "Kotlin"
+        ],
+        "extensions": [
+          ".kt",
+          ".kts"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "configurationDefaults": {
+      "[kotlin]": {
+        "editor.semanticHighlighting.enabled": true
+      }
+    },
+    "commands": [
+      {
+        "command": "kotlinSyntax.showLogs",
+        "title": "Kotlin Syntax: Show Logs"
+      },
+      {
+        "command": "kotlinSyntax.restartParser",
+        "title": "Kotlin Syntax: Restart Parser"
+      }
+    ]
+  },
+  "devDependencies": {
+    "@types/vscode": "1.140.0"
+  },
+  "publisher": "lisonge",
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onLanguage:kotlin"
+  ],
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "kotlin",
+    "kts",
+    "syntax",
+    "highlighting",
+    "wasm"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lisonge/vscode-kotlin-syntax.git",
+    "directory": "kotlin-vscode"
+  },
+  "homepage": "https://github.com/lisonge/vscode-kotlin-syntax#readme",
+  "bugs": {
+    "url": "https://github.com/lisonge/vscode-kotlin-syntax/issues"
+  }
+}

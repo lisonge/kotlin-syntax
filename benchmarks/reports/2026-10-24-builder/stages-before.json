@@ -1,0 +1,42 @@
+[
+  {
+    "lexerIncludingJsonMs": 36.7972,
+    "parseIncludingLexerMs": 2295.4727,
+    "treeJsonMs": 88.02289999999994,
+    "highlightMs": 19.436199999999644,
+    "treeBytes": 5433783,
+    "spanBytes": 289405
+  },
+  {
+    "lexerIncludingJsonMs": 10.679599999999937,
+    "parseIncludingLexerMs": 2109.8693999999996,
+    "treeJsonMs": 99.50650000000041,
+    "highlightMs": 13.379400000000714,
+    "treeBytes": 5433783,
+    "spanBytes": 289405
+  },
+  {
+    "lexerIncludingJsonMs": 10.959600000000137,
+    "parseIncludingLexerMs": 2180.5977000000003,
+    "treeJsonMs": 80.01200000000063,
+    "highlightMs": 16.167599999999766,
+    "treeBytes": 5433783,
+    "spanBytes": 289405
+  },
+  {
+    "lexerIncludingJsonMs": 17.33259999999973,
+    "parseIncludingLexerMs": 2162.1537000000008,
+    "treeJsonMs": 93.86219999999958,
+    "highlightMs": 13.206699999998818,
+    "treeBytes": 5433783,
+    "spanBytes": 289405
+  },
+  {
+    "lexerIncludingJsonMs": 26.134399999999005,
+    "parseIncludingLexerMs": 2132.5087000000003,
+    "treeJsonMs": 87.32700000000114,
+    "highlightMs": 12.931000000000495,
+    "treeBytes": 5433783,
+    "spanBytes": 289405
+  }
+]

@@ -1,0 +1,163 @@
+{
+  "mode": "legacy",
+  "node": "v26.12.1",
+  "cpu": "Intel(R) Core(TM) i9-14900HX",
+  "moduleLoadMs": 3.376199999999997,
+  "warmup": 2,
+  "results": [
+    {
+      "name": "synthetic-10KiB",
+      "utf16Length": 10322,
+      "sha256": "b07c6904bf1e9bf4c9f4c5242f4cabde5b553f1ecc98f490a283ca686e92417a",
+      "coldFirstResultMs": 71.6369,
+      "full": {
+        "samples": 20,
+        "p50Ms": 35.59680000000003,
+        "p95Ms": 38.180499999999995,
+        "p99Ms": 38.2175,
+        "timerP95Ms": 38.24570000000003,
+        "peakProcessRssMiB": 133.078125,
+        "checksum": "6cb576c144cf5f9e3873348d6f9f5342cde8a1a0cbe7e33859525bd8882dc984",
+        "outputBytes": 36720
+      },
+      "front": {
+        "samples": 20,
+        "p50Ms": 38.865099999999984,
+        "p95Ms": 44.11900000000014,
+        "p99Ms": 44.555900000000065,
+        "timerP95Ms": 44.1418000000001,
+        "peakProcessRssMiB": 135.9453125,
+        "checksum": "6cb576c144cf5f9e3873348d6f9f5342cde8a1a0cbe7e33859525bd8882dc984",
+        "outputBytes": 36720,
+        "wasmPayloadBytes": 544341
+      },
+      "tail": {
+        "samples": 20,
+        "p50Ms": 11.285000000000082,
+        "p95Ms": 12.82899999999995,
+        "p99Ms": 13.301300000000083,
+        "timerP95Ms": 12.849199999999882,
+        "peakProcessRssMiB": 142.953125,
+        "checksum": "6cb576c144cf5f9e3873348d6f9f5342cde8a1a0cbe7e33859525bd8882dc984",
+        "outputBytes": 36720,
+        "wasmPayloadBytes": 544341
+      },
+      "cached": {
+        "samples": 20,
+        "p50Ms": 6.286799999999857,
+        "p95Ms": 8.313899999999649,
+        "p99Ms": 8.425900000000183,
+        "timerP95Ms": 8.330599999999777,
+        "peakProcessRssMiB": 147.4140625,
+        "checksum": "6cb576c144cf5f9e3873348d6f9f5342cde8a1a0cbe7e33859525bd8882dc984",
+        "outputBytes": 36720
+      },
+      "burst": {
+        "samples": 20,
+        "p50Ms": 321.6966000000002,
+        "p95Ms": 327.1728000000003,
+        "p99Ms": 329.4301999999998,
+        "timerP95Ms": 327.21110000000044,
+        "peakProcessRssMiB": 167.7578125,
+        "checksum": "6cb576c144cf5f9e3873348d6f9f5342cde8a1a0cbe7e33859525bd8882dc984",
+        "outputBytes": 36720
+      }
+    },
+    {
+      "name": "synthetic-100KiB",
+      "utf16Length": 102462,
+      "sha256": "86d2c2f08b4b2183d48f5bc27555a6107bf38fa1d77ac72519810fadd0a6d464",
+      "coldFirstResultMs": 2407.9851,
+      "full": {
+        "samples": 5,
+        "p50Ms": 2390.265599999999,
+        "p95Ms": 2395.7703,
+        "p99Ms": 2395.7703,
+        "timerP95Ms": 2395.798600000002,
+        "peakProcessRssMiB": 322.01953125,
+        "checksum": "10169252cb0376a61cd39c5b6674ed113cd6a92827527334d13f48812b0f0ba5",
+        "outputBytes": 356820
+      },
+      "front": {
+        "samples": 5,
+        "p50Ms": 2677.8260999999984,
+        "p95Ms": 2855.733100000005,
+        "p99Ms": 2855.733100000005,
+        "timerP95Ms": 2856.1120999999985,
+        "peakProcessRssMiB": 400.40625,
+        "checksum": "10169252cb0376a61cd39c5b6674ed113cd6a92827527334d13f48812b0f0ba5",
+        "outputBytes": 356820,
+        "wasmPayloadBytes": 5434565
+      },
+      "tail": {
+        "samples": 5,
+        "p50Ms": 204.95610000000306,
+        "p95Ms": 223.39739999999438,
+        "p99Ms": 223.39739999999438,
+        "timerP95Ms": 223.4323000000004,
+        "peakProcessRssMiB": 443.33984375,
+        "checksum": "10169252cb0376a61cd39c5b6674ed113cd6a92827527334d13f48812b0f0ba5",
+        "outputBytes": 356820,
+        "wasmPayloadBytes": 5434565
+      },
+      "cached": {
+        "samples": 5,
+        "p50Ms": 119.6426000000065,
+        "p95Ms": 126.47400000000198,
+        "p99Ms": 126.47400000000198,
+        "timerP95Ms": 126.50760000000446,
+        "peakProcessRssMiB": 460.24609375,
+        "checksum": "10169252cb0376a61cd39c5b6674ed113cd6a92827527334d13f48812b0f0ba5",
+        "outputBytes": 356820
+      }
+    },
+    {
+      "name": "parser-source",
+      "utf16Length": 68378,
+      "sha256": "eed4b77e207f9deaa63736e82a4c3c1e7614340379b49bcb1284abf8f0c64e20",
+      "coldFirstResultMs": 1083.4437000000034,
+      "full": {
+        "samples": 5,
+        "p50Ms": 1167.693499999994,
+        "p95Ms": 1220.9511000000057,
+        "p99Ms": 1220.9511000000057,
+        "timerP95Ms": 1221.2366000000038,
+        "peakProcessRssMiB": 444.9765625,
+        "checksum": "b46315134c49db08cdcfffa8126764580f2b2892e051d1f947fcce64086716d0",
+        "outputBytes": 184480
+      },
+      "front": {
+        "samples": 5,
+        "p50Ms": 1146.5368999999919,
+        "p95Ms": 1308.8716999999888,
+        "p99Ms": 1308.8716999999888,
+        "timerP95Ms": 1309.1566999999923,
+        "peakProcessRssMiB": 263.921875,
+        "checksum": "b46315134c49db08cdcfffa8126764580f2b2892e051d1f947fcce64086716d0",
+        "outputBytes": 184480,
+        "wasmPayloadBytes": 2734821
+      },
+      "tail": {
+        "samples": 5,
+        "p50Ms": 1123.698000000004,
+        "p95Ms": 1136.2809000000125,
+        "p99Ms": 1136.2809000000125,
+        "timerP95Ms": 1136.5617000000057,
+        "peakProcessRssMiB": 271.35546875,
+        "checksum": "b46315134c49db08cdcfffa8126764580f2b2892e051d1f947fcce64086716d0",
+        "outputBytes": 184480,
+        "wasmPayloadBytes": 2734821
+      },
+      "cached": {
+        "samples": 5,
+        "p50Ms": 42.825499999991735,
+        "p95Ms": 51.612999999997555,
+        "p99Ms": 51.612999999997555,
+        "timerP95Ms": 52.90429999999469,
+        "peakProcessRssMiB": 270.9765625,
+        "checksum": "b46315134c49db08cdcfffa8126764580f2b2892e051d1f947fcce64086716d0",
+        "outputBytes": 184480
+      }
+    }
+  ]
+}

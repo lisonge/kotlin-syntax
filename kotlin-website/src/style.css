@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+:root { font-family: Inter, "Segoe UI", "Microsoft YaHei", sans-serif; color: #e6e8ee; background: #191c22; color-scheme: dark; }
+body { margin: 0; }
+button, select { cursor: pointer; }
+button:focus-visible, select:focus-visible, a:focus-visible { outline: 2px solid #c678dd; outline-offset: 4px; }
+.logo { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 7px; color: #191c22; font-weight: 900; background: linear-gradient(135deg, #61afef, #c678dd 60%, #e5c07b); }
