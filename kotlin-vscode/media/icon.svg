@@ -6,7 +6,6 @@
       <stop offset="1" stop-color="#e5c07b"/>
     </linearGradient>
   </defs>
-  <rect width="256" height="256" rx="56" fill="#191c22"/>
-  <rect x="16" y="16" width="224" height="224" rx="44" fill="url(#brand)"/>
+  <rect width="256" height="256" rx="56" fill="url(#brand)"/>
   <path d="M66 57h31v62l53-62h40l-61 70 65 72h-42l-55-63v63H66z" fill="#191c22"/>
 </svg>
