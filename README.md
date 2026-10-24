@@ -2,6 +2,8 @@
 
 [English](README.md) | [简体中文](README-zh.md)
 
+[Live Demo](https://kotlin-syntax.pages.dev)
+
 Kotlin Syntax is a Kotlin Multiplatform library for parsing and classifying Kotlin syntax, with a VS Code extension and an online playground powered by the same parser.
 
 ## Features

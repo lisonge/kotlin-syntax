@@ -2,6 +2,8 @@
 
 [English](README.md) | [简体中文](README-zh.md)
 
+[在线查看](https://kotlin-syntax.pages.dev)
+
 Kotlin Syntax 是一个用于 Kotlin 源码解析和语法分类的 Kotlin Multiplatform 库，同时提供基于同一解析器的 VS Code 扩展和在线演示应用。
 
 ## 功能
