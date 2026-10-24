@@ -9,9 +9,11 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 jobs:
-  build:
+  release:
     timeout-minutes: 30
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/setup@v3
@@ -35,13 +37,10 @@ jobs:
         working-directory: kotlin-vscode
         env:
           KOTLIN_VSCODE_SKIP_BUILD: '1'
-        run: pnpm dlx @vscode/vsce@4.0.0 package --no-dependencies --out kotlin-syntax.vsix
-      - name: Upload VSIX
-        uses: actions/upload-artifact@v7
-        with:
-          name: vsix
-          path: kotlin-vscode/kotlin-syntax.vsix
-          if-no-files-found: error
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          pnpm dlx @vscode/vsce@4.0.0 package --no-dependencies --out kotlin-syntax.vsix
+          mv kotlin-syntax.vsix "kotlin-syntax-${RELEASE_TAG#v}.vsix"
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v7
@@ -49,59 +48,8 @@ jobs:
           name: test-reports-ubuntu-latest
           path: kotlin-parser/build/reports/tests/
           if-no-files-found: warn
-
-  publish:
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v8
-        with:
-          name: vsix
-          path: release
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v3
         with:
-          files: release/kotlin-syntax.vsix
+          files: kotlin-vscode/kotlin-syntax-*.vsix
           body_path: kotlin-vscode/CHANGELOG.md
-
-  publish-marketplace:
-    name: Publish VS Code Marketplace
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/setup@v3
-      - uses: actions/download-artifact@v8
-        with:
-          name: vsix
-          path: release
-      - name: Publish existing VSIX
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: pnpm dlx @vscode/vsce@4.0.0 publish --packagePath release/kotlin-syntax.vsix
-
-  publish-openvsx:
-    name: Publish Open VSX
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/setup@v3
-      - uses: actions/download-artifact@v8
-        with:
-          name: vsix
-          path: release
-      - name: Publish existing VSIX
-        env:
-          OVSX_PAT: ${{ secrets.OVSX_PAT }}
-        run: pnpm dlx ovsx@1.3.0 publish release/kotlin-syntax.vsix
