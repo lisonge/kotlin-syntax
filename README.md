@@ -2,9 +2,11 @@
 
 [English](README.md) | [简体中文](README-zh.md)
 
-[Live Demo](https://kotlin-syntax.pages.dev)
+[Live Demo](https://kotlin-syntax.pages.dev) | [Install VS Code Extension](https://marketplace.visualstudio.com/items?itemName=lisonge.kotlin-vscode)
 
 Kotlin Syntax is a Kotlin Multiplatform library for parsing and classifying Kotlin syntax, with a VS Code extension and an online playground powered by the same parser.
+
+<img alt="Image" src="https://github.com/user-attachments/assets/81700a18-8414-417d-a8a1-fb0aa83df866" />
 
 ## Features
 
@@ -17,11 +19,11 @@ Tests compare parsing against the official Kotlin compiler. Highlighting is base
 
 ## Modules
 
-| Module | Purpose |
-| --- | --- |
-| [kotlin-parser](kotlin-parser/) | Portable parser, syntax trees, incremental documents and syntax classifications |
-| [kotlin-vscode](kotlin-vscode/) | VS Code extension using the parser in a Worker |
-| [kotlin-website](kotlin-website/) | Interactive playground using the same parser |
+| Module                            | Purpose                                                                         |
+| --------------------------------- | ------------------------------------------------------------------------------- |
+| [kotlin-parser](kotlin-parser/)   | Portable parser, syntax trees, incremental documents and syntax classifications |
+| [kotlin-vscode](kotlin-vscode/)   | VS Code extension using the parser in a Worker                                  |
+| [kotlin-website](kotlin-website/) | Interactive playground using the same parser                                    |
 
 ## Documentation
 

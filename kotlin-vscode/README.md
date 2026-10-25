@@ -2,9 +2,9 @@
 
 Syntax highlighting for Kotlin `.kt` and `.kts` files, powered by a Kotlin/WASM parser running in a Worker. Colors follow the active VS Code theme. No JVM language server or Gradle project import is needed for highlighting.
 
-<img width="1344" height="743" alt="Image" src="https://github.com/user-attachments/assets/81700a18-8414-417d-a8a1-fb0aa83df866" />
+_Actual screenshot of the project's web playground using One Dark Pro. The playground and extension share the Kotlin parser and token classifications; VS Code colors depend on your selected theme._
 
-*Actual screenshot of the project's web playground using One Dark Pro. The playground and extension share the Kotlin parser and token classifications; VS Code colors depend on your selected theme.*
+<img alt="Image" src="https://github.com/user-attachments/assets/81700a18-8414-417d-a8a1-fb0aa83df866" />
 
 ## Features
 

@@ -2,9 +2,11 @@
 
 [English](README.md) | [简体中文](README-zh.md)
 
-[在线查看](https://kotlin-syntax.pages.dev)
+[在线查看](https://kotlin-syntax.pages.dev) | [安装 VS Code 扩展](https://marketplace.visualstudio.com/items?itemName=lisonge.kotlin-vscode)
 
 Kotlin Syntax 是一个用于 Kotlin 源码解析和语法分类的 Kotlin Multiplatform 库，同时提供基于同一解析器的 VS Code 扩展和在线演示应用。
+
+<img alt="Image" src="https://github.com/user-attachments/assets/81700a18-8414-417d-a8a1-fb0aa83df866" />
 
 ## 功能
 
@@ -17,11 +19,11 @@ Kotlin Syntax 是一个用于 Kotlin 源码解析和语法分类的 Kotlin Multi
 
 ## 模块
 
-| 模块 | 用途 |
-| --- | --- |
-| [kotlin-parser](kotlin-parser/) | 跨平台解析器、语法树、增量文档与语法分类区间 |
-| [kotlin-vscode](kotlin-vscode/) | 在 Worker 中运行解析器的 VS Code 扩展 |
-| [kotlin-website](kotlin-website/) | 基于同一解析器的交互式演示应用 |
+| 模块                              | 用途                                         |
+| --------------------------------- | -------------------------------------------- |
+| [kotlin-parser](kotlin-parser/)   | 跨平台解析器、语法树、增量文档与语法分类区间 |
+| [kotlin-vscode](kotlin-vscode/)   | 在 Worker 中运行解析器的 VS Code 扩展        |
+| [kotlin-website](kotlin-website/) | 基于同一解析器的交互式演示应用               |
 
 ## 文档
 
