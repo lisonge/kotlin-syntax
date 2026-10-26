@@ -15,6 +15,8 @@ await cp(new URL('../build/compileSync/wasmJs/main/productionExecutable/kotlin/'
 const declarations = new URL('kotlin-parser.d.mts', out);
 await writeFile(declarations, (await readFile(declarations, 'utf8')).replace(
   'documentClassifications(id: number): NonNullable<unknown>', 'documentClassifications(id: number): Int32Array<ArrayBuffer>',
+).replace(
+  'documentDefinitions(id: number, offset: number): NonNullable<unknown>', 'documentDefinitions(id: number, offset: number): Int32Array<ArrayBuffer>',
 ));
 const { tokenLegend } = await import('../dist/kotlin-parser.mjs');
 const { types, modifiers } = JSON.parse(tokenLegend());

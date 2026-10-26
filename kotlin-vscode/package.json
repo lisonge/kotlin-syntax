@@ -8,7 +8,7 @@
     "theme": "dark"
   },
   "pricing": "Free",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "private": true,
   "type": "module",
   "engines": {
@@ -18,9 +18,10 @@
     "vscode:prepublish": "node scripts/prepublish.ts",
     "build": "node scripts/build.ts",
     "test:host": "node scripts/test-host.ts",
-    "test": "node --test test/bundle.ts test/worker.ts"
+    "test": "node --test test/bundle.ts test/worker.ts test/name-filter.ts test/workspace-files.ts"
   },
   "dependencies": {
+    "ignore": "^7.0.14",
     "kotlin-parser": "workspace:*"
   },
   "contributes": {

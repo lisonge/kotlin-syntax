@@ -22,7 +22,7 @@ class SemanticBuilder(val delegate: SyntaxBuilder) {
             if (previous != "WHITE_SPACE") break
             val start = delegate.rawTokenTypeStart(-i)
             val end = delegate.rawTokenTypeStart(-i + 1)
-            if ('\n' in delegate.source.substring(start, end)) return true
+            for (offset in start until end) if (delegate.source[offset] == '\n') return true
         }
         return false
     }

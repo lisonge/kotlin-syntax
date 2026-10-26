@@ -1,6 +1,19 @@
 export interface Case { source: string; expected: [string, string, number][] }
 // Hand-authored expectations, independent of the tree classifier.
 export const cases: Case[] = [
+  { source: 'val value = Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES', expected: [['Settings','class',0],['Secure','class',0],['ENABLED_ACCESSIBILITY_SERVICES','variable',0]] },
+  { source: 'val value = Settings.make().Secure.VALUE', expected: [['Settings','class',0],['make','function',0],['Secure','variable',0],['VALUE','variable',0]] },
+  { source: 'object Settings { val Secure = external }; val value = Settings.Secure.VALUE', expected: [['Secure','property',2],['VALUE','variable',0]] },
+  { source: 'val a = SnapshotStore.create(); val b = MAX_SIZE.compareTo(1); val c = Button(); val d = Store.value', expected: [['SnapshotStore','class',0],['create','function',0],['MAX_SIZE','variable',0],['Button','function',0],['Store','class',0]] },
+  { source: 'val a = Dispatchers.IO; val b = Db.snapshotDao; val c = MAX_SIZE.value', expected: [['Dispatchers','class',0],['IO','variable',0],['Db','class',0],['snapshotDao','variable',0],['MAX_SIZE','variable',0]] },
+  { source: 'fun f(Db: Any) = Db.snapshotDao; fun g() { val Dispatchers = external; Dispatchers.IO }', expected: [['Db','parameter',0],['Dispatchers','variable',2],['IO','variable',0]] },
+  { source: 'fun f(Store: Any) { Store.make(); val Local = Store; Local.make() }', expected: [['Store','parameter',0],['Local','variable',2]] },
+  { source: 'class User(val name: String); fun f() { val u = User(name = "a"); val copy = u; copy.name }', expected: [['name','parameter',0],['name','property',2]] },
+  { source: 'class User(val name: String); fun f(x: Any) = if (x is User) x.name else null', expected: [['name','property',2]] },
+  { source: 'open class Base(val name: String); class Child : Base("a") { fun f() = this.name }', expected: [['name','property',2]] },
+  { source: 'import other.ErrorMessage; class Failure : IllegalArgumentException() { val message: ErrorMessage get() = ErrorMessage.WithDetail() }', expected: [['IllegalArgumentException','type',0],['ErrorMessage','type',0],['WithDetail','function',0]] },
+  { source: 'enum class Reason { Invalid }; class Failure : Base() { val reason get() = Reason.Invalid }', expected: [['Reason','enum',0],['Invalid','enumMember',0]] },
+  { source: 'enum class Reason { Invalid }; fun f(Reason: Any) = Reason.Invalid', expected: [['Reason','parameter',0],['Invalid','variable',0]] },
   { source: 'enum class Mode { ON }', expected: [['Mode','enum',1],['ON','enumMember',1]] },
   { source: 'abstract class Base { abstract suspend fun run() }', expected: [['Base','class',5],['run','method',13]] },
   { source: 'class Box(val value: Int, var count: Int) { val fixed = 1; var changing = 2 }', expected: [['value','property',3],['count','property',1],['fixed','property',3],['changing','property',1]] },

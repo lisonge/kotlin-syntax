@@ -1,9 +1,23 @@
 export interface Snapshot { key: string; version: number; source: string; script: boolean }
 export interface Edit { start: number; end: number; text: string }
-export type Request = { kind: 'parse'; request: number; snapshot: Snapshot }
-  | { kind: 'edit'; request: number; key: string; baseVersion: number; version: number; script: boolean; batches: Edit[][] }
+export interface FileSymbols {
+  query?: { root: { path: string[]; mode: 'symbol' | 'instance' | 'constructor'; bindingStart?: number; typeOnly?: boolean; typeMembers?: string[] }; members: string[]; type: boolean; parameter?: string | null; callable?: boolean; offset?: number } | null;
+  reference?: { name: string; type: boolean; constructorOnly?: boolean; importOnly?: boolean } | null;
+  packageName: string[];
+  imports: { name: string; star: boolean; path: string[]; segments: { start: number; end: number; path: string[] }[]; start: number; end: number }[];
+  declarations: Declaration[];
+}
+export interface Declaration {
+  name: string; kind: string; path: string[]; aliases: string[][]; private: boolean; privateScopes?: [number, number][]; static: boolean;
+  parameters?: { name: string; start: number; end: number; nameStart: number; nameEnd: number }[];
+  typePath: string[]; constructorPath: string[]; extension: boolean;
+  start: number; end: number; nameStart: number; nameEnd: number;
+}
+export type Request = { kind: 'parse'; request: number; snapshot: Snapshot; definitionOffset?: number; symbols?: boolean }
+  | { kind: 'edit'; request: number; key: string; baseVersion: number; version: number; script: boolean; batches: Edit[][]; definitionOffset?: number; symbols?: boolean }
   | { kind: 'close'; key: string };
 export type Response = { kind: 'ready' }
+  | { kind: 'symbols'; request: number; version: number; data: string }
   | { kind: 'result'; request: number; version: number; data: Uint32Array }
   | { kind: 'resync'; request: number }
   | { kind: 'error'; request: number; error: string };

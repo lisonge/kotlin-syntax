@@ -64,8 +64,9 @@ internal fun SyntaxNode.classificationData(): IntArray {
                     parent?.kind == "FUN" && container?.kind == "CLASS_BODY" -> TokenType.METHOD
                     parent?.kind == "LABEL" -> TokenType.LABEL
                     declared != null -> declared
+                    parents.any { it.kind == "VALUE_ARGUMENT_NAME" } -> TokenType.PARAMETER
                     parents.any { it.kind == "PACKAGE_DIRECTIVE" || it.kind == "IMPORT_DIRECTIVE" } -> TokenType.NAMESPACE
-                    parents.any { it.kind == "USER_TYPE" } -> if (parents.any { it.kind == "CONSTRUCTOR_CALLEE" }) TokenType.DECORATOR else TokenType.TYPE
+                    parents.any { it.kind == "USER_TYPE" } -> if (parents.any { it.kind == "CONSTRUCTOR_CALLEE" } && parents.any { it.kind == "ANNOTATION_ENTRY" }) TokenType.DECORATOR else TokenType.TYPE
                     parents.getOrNull(parents.size - 2)?.kind == "CALL_EXPRESSION" -> TokenType.FUNCTION
                     else -> TokenType.VARIABLE
                 }

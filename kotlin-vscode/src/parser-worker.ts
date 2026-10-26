@@ -41,9 +41,21 @@ port.on('message', (message: Request) => {
       }
       state.version = message.version;
     }
-    state.data ??= encodeTokens(state.source, parser.documentClassifications(state.id));
-    // Transfer a copy; retain the cached buffer for unchanged-document requests.
-    const data = state.data.slice();
+    if (message.symbols) {
+      const summary = JSON.parse(parser.documentSymbols(state.id));
+      if (message.definitionOffset !== undefined) summary.reference = JSON.parse(parser.documentExternalReference(state.id, message.definitionOffset));
+      if (message.definitionOffset !== undefined) summary.query = JSON.parse(parser.documentNavigationQuery(state.id, message.definitionOffset));
+      port.postMessage({ kind: 'symbols', request: message.request, version: state.version, data: JSON.stringify(summary) } satisfies Response);
+      return;
+    }
+    let data: Uint32Array<ArrayBuffer>;
+    if (message.definitionOffset !== undefined) {
+      data = Uint32Array.from(parser.documentDefinitions(state.id, message.definitionOffset));
+    } else {
+      state.data ??= encodeTokens(state.source, parser.documentClassifications(state.id));
+      // Transfer a copy; retain the cached buffer for unchanged-document requests.
+      data = state.data.slice();
+    }
     port.postMessage({ kind: 'result', request: message.request, version: state.version, data } satisfies Response, [data.buffer]);
   } catch (error) {
     const state = documents.get(key);

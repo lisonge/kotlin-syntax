@@ -11,7 +11,7 @@ await build({
   outExtensions: () => ({ js: '.js', dts: '.d.ts' }),
   platform: 'node',
   deps: {
-    alwaysBundle: ['kotlin-parser/shared'],
+    alwaysBundle: ['kotlin-parser/shared', 'ignore'],
     neverBundle: ['vscode', 'kotlin-parser/wasm'],
   },
   outputOptions: {

@@ -11,11 +11,10 @@ enum class TriviaBinder {
     PRECEDING_ALL_COMMENTS, TRAILING_ALL_COMMENTS, FIRST_SHEBANG;
 
     internal fun edge(tokens: List<Token>, source: String): Int {
-        fun text(i: Int) = source.substring(tokens[i].start, tokens[i].end)
         fun lineBreaks(i: Int): Int {
-            val value = text(i)
+            val token = tokens[i]
             var count = 0
-            for (j in value.indices) if (value[j] == '\n' || value[j] == '\r' && value.getOrNull(j + 1) != '\n') count++
+            for (j in token.start until token.end) if (source[j] == '\n' || source[j] == '\r' && (j + 1 == token.end || source[j + 1] != '\n')) count++
             return count
         }
         when (this) {

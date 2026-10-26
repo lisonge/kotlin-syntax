@@ -24,6 +24,10 @@ export function KotlinEditor() {
   const container = useRef<HTMLDivElement>(null);
   const editor = useRef<EditorView | null>(null);
   const refresh = useRef<(() => void) | null>(null);
+  const goToDefinition = useRef<((offset?: number) => void) | null>(null);
+  const chooseDefinition = useRef<((from: number, to: number) => void) | null>(null);
+  const [targets, setTargets] = useState<{ from: number; to: number; label: string }[]>([]);
+  const [navigationStatus, setNavigationStatus] = useState('');
   const mode = useRef(false);
   const [script, setScript] = useState(false);
   const [status, setStatus] = useState('Loading parser…');
@@ -38,8 +42,15 @@ export function KotlinEditor() {
     let pending: ChangeSet | undefined;
     let sentVersion = 0;
     let sync = true;
+    let query: Extract<Request, { kind: 'definition' }> | undefined;
+    let queryId = 0;
+    const clearNavigation = () => { queryId++; query = undefined; setTargets([]); setNavigationStatus(''); };
     const send = () => {
-      if (busy || (!sync && !pending)) return;
+      if (busy) return;
+      if (!sync && !pending) {
+        if (query) { busy = true; worker.postMessage(query); query = undefined; }
+        return;
+      }
       let request: Request;
       if (sync) {
         request = { kind: 'sync', version, source: view.state.doc.toString(), script: mode.current };
@@ -52,13 +63,31 @@ export function KotlinEditor() {
       setStatus('Highlighting…');
       worker.postMessage(request);
     };
+    const navigate = (from: number, to: number) => {
+      view.dispatch({ selection: { anchor: from, head: to }, scrollIntoView: true });
+      view.focus();
+      setTargets([]);
+    };
+    const requestDefinition = (offset = view.state.selection.main.head) => {
+      const word = view.state.wordAt(offset);
+      setTargets([]); setNavigationStatus('Finding definition…');
+      query = { kind: 'definition', version, offset: word?.from ?? offset, requestId: ++queryId };
+      send();
+    };
     const view = new EditorView({
       parent: container.current!,
       state: EditorState.create({ doc: sample, extensions: [
         lineNumbers(), highlightActiveLineGutter(), highlightActiveLine(), drawSelection(), history(),
         keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]), oneDarkPro, highlighting,
+        EditorView.domEventHandlers({ click(event, view) {
+          if (!(event.ctrlKey || event.metaKey) || event.button !== 0) return false;
+          const offset = view.posAtCoords({ x: event.clientX, y: event.clientY });
+          if (offset === null) return false;
+          requestDefinition(offset); event.preventDefault(); return true;
+        } }),
         EditorView.contentAttributes.of({ 'aria-label': 'Kotlin code editor', spellcheck: 'false' }),
         EditorView.updateListener.of(update => {
+          if (update.docChanged || update.selectionSet) clearNavigation();
           if (update.docChanged) {
             version++;
             if (!sync) pending = pending ? pending.compose(update.changes) : update.changes;
@@ -73,13 +102,29 @@ export function KotlinEditor() {
       ] }),
     });
     editor.current = view;
-    refresh.current = () => { version++; sync = true; pending = undefined; send(); };
+    goToDefinition.current = requestDefinition;
+    chooseDefinition.current = navigate;
+    refresh.current = () => { clearNavigation(); version++; sync = true; pending = undefined; send(); };
     worker.onmessage = ({ data }: MessageEvent<Result>) => {
       busy = false;
+      if ('definitions' in data) {
+        if (data.version === version && data.requestId === queryId) {
+          const found = [];
+          for (let i = 0; i < data.definitions.length; i += 4) {
+            const from = data.definitions[i + 2], to = data.definitions[i + 3];
+            const line = view.state.doc.lineAt(from);
+            found.push({ from, to, label: `Line ${line.number}: ${line.text.trim()}` });
+          }
+          if (found.length === 1) navigate(found[0].from, found[0].to);
+          else setTargets(found);
+          setNavigationStatus(found.length ? (found.length === 1 ? 'Jumped to definition.' : 'Choose a definition:') : 'No same-file declaration or explicit import found.');
+        }
+        send(); return;
+      }
       if ('resync' in data) {
         sync = true; pending = undefined; send(); return;
       }
-      if ('error' in data) { sync = true; pending = undefined; }
+      if ('error' in data) { clearNavigation(); sync = true; pending = undefined; }
       if (data.version === version) {
         setError('error' in data);
         if ('error' in data) {
@@ -100,9 +145,9 @@ export function KotlinEditor() {
       // Retry errors only after another edit; mismatches request an immediate snapshot.
       if (!('error' in data) || data.version !== version) send();
     };
-    worker.onerror = () => { busy = false; setError(true); setStatus('Worker failed to load. Reload the page to retry.'); };
+    worker.onerror = () => { clearNavigation(); busy = false; setError(true); setStatus('Worker failed to load. Reload the page to retry.'); };
     send();
-    return () => { worker.terminate(); view.destroy(); editor.current = null; refresh.current = null; };
+    return () => { worker.terminate(); view.destroy(); editor.current = null; refresh.current = null; goToDefinition.current = null; chooseDefinition.current = null; };
   }, []);
 
   function reset() {
@@ -116,6 +161,12 @@ export function KotlinEditor() {
         <div className="flex items-center gap-3 text-xs"><label className="text-slate-400">Mode <select aria-label="Kotlin file mode" className="ml-2 rounded bg-[#282c34] px-2 py-1.5 text-slate-200" value={script ? 'script' : 'file'} onChange={event => { const next = event.target.value === 'script'; mode.current = next; setScript(next); refresh.current?.(); }}><option value="file">File .kt</option><option value="script">Script .kts</option></select></label><button className="rounded border border-white/10 px-3 py-1.5 text-slate-300 hover:bg-white/5" onClick={reset}>Reset example</button></div>
       </div>
       <div ref={container} className="h-[58vh] min-h-[360px]" />
+      <div className="border-t border-white/10 bg-[#21252b] px-4 py-2 text-xs text-slate-300">
+        <button className="rounded border border-white/20 px-3 py-1.5 hover:bg-white/5" onClick={() => goToDefinition.current?.()}>Go to definition</button>
+        <span className="ml-3 text-slate-400">Ctrl/Cmd + click · Same-file declarations and explicit imports</span>
+        <span className="ml-3" role="status">{navigationStatus}</span>
+        {targets.length > 0 && <ul aria-label="Definition candidates" className="mt-2 max-h-40 overflow-auto">{targets.map(target => <li key={target.from}><button className="w-full px-2 py-1 text-left font-mono hover:bg-white/5" onClick={() => chooseDefinition.current?.(target.from, target.to)}>{target.label}</button></li>)}</ul>}
+      </div>
       <div className="flex flex-wrap justify-between gap-3 border-t border-white/5 bg-[#21252b] px-4 py-2.5 font-mono text-xs text-slate-400"><span role="status" className={error ? 'text-red-300' : ''}>{error ? '● ' : '● WASM · '}{status}</span><span>{count} tokens <span className="mx-3 text-slate-600">|</span>{position}<span className="mx-3 text-slate-600">|</span>UTF-16</span></div>
     </section>;
 }

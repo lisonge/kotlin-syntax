@@ -9,6 +9,15 @@ self.onmessage = async ({ data }: MessageEvent<Request>) => {
   try {
     const api = parser ??= await import('kotlin-parser/wasm');
     const start = performance.now();
+    if (data.kind === 'definition') {
+      if (handle === undefined || version !== data.version) {
+        self.postMessage({ version: data.version, resync: true } satisfies Result);
+        return;
+      }
+      const definitions = api.documentDefinitions(handle, data.offset);
+      self.postMessage({ version, definitions, requestId: data.requestId } satisfies Result, { transfer: [definitions.buffer] });
+      return;
+    }
     if (data.kind === 'sync') {
       if (handle !== undefined) api.closeDocument(handle);
       handle = undefined;

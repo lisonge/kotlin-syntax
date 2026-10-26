@@ -48,6 +48,8 @@ Independent hand-authored highlight expectations live in `kotlin-vscode/test/hig
 
 To test a packaged installation, set `VSCODE_TEST_VSIX` to the VSIX path and run `pnpm test:extension`. The runner installs it through the VS Code CLI into a fresh isolated profile, uses a separate empty development harness, and asserts that the target extension loads from the isolated installation directory before testing highlighting. It does not install into the user's normal profile.
 
+Set `VSCODE_TEST_WORKSPACE=1` to also create an isolated workspace and verify explicit-import navigation across files, aliases, overloads, file-private exclusions, duplicate qualified names, unsaved edits, file creation/deletion/rename, omitted package prefixes, string filtering before parsing and reuse of cached summaries. When testing the Dev VSIX, set `VSCODE_TEST_MANIFEST` to the absolute path of `kotlin-vscode/build/dev-extension/package.json` so the host targets the Dev identity.
+
 Worker fault tests cover startup failure, exit, timeouts with queued work, the consecutive-failure circuit breaker, manual reset, disposal and recovery. The extension-host suite also invokes the log and restart commands before checking tokens.
 
 ## Releases

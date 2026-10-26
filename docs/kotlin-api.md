@@ -82,6 +82,19 @@ Use `script = true` for script documents. Edits address the current source, not 
 
 Incremental parsing reuses top-level prefixes. Scripts, preamble edits and damaged previous trees can trigger a full reparse. See [compatibility](compatibility.md) for limits.
 
+## Same-file definitions
+
+```kotlin
+val document = IncrementalDocument("fun greet(name: String) = name")
+val targets = document.definitionsAt(document.source.lastIndexOf("name"))
+// List<DefinitionTarget>: start/end enclose the declaration;
+// nameStart/nameEnd select its name. All ranges use UTF-16 and exclusive ends.
+```
+
+The lexical index is built on the first query and invalidated by edits. It resolves supported same-file declarations and explicit import aliases without loading dependencies. Overloads return multiple candidates; unsupported or ambiguous bindings return an empty list. It does not infer receiver types or perform cross-file lookup. See [compatibility](compatibility.md) for the navigation boundary.
+
+The WASM navigation helpers `documentSymbols(id)` and `documentNavigationQuery(id, offset)` return JSON for the VS Code workspace resolver. Symbols contain package/import paths, declaration ownership, companion aliases, visibility and syntactic type hints. Queries contain a receiver path or local binding, its supported receiver mode, and selected member segments; unsupported queries return JSON `null`. These helpers do not read other files or alter parsing. Workspace lookup and candidate selection run in the extension.
+
 ## Verification
 
 ```sh

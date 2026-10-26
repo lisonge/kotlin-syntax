@@ -2,25 +2,35 @@ import type * as VSCode from 'vscode';
 import { createRequire } from 'node:module';
 const vscode: typeof VSCode = createRequire(import.meta.url)('vscode');
 export async function activate(context: VSCode.ExtensionContext): Promise<void> {
+  if (context.extension.id === 'lisonge.kotlin-vscode-dev' && vscode.extensions.getExtension('lisonge.kotlin-vscode')) {
+    void vscode.window.showInformationMessage('Kotlin Syntax is enabled, so Kotlin Syntax Dev is paused. Disable Kotlin Syntax for this workspace and reload the window to test Dev.');
+    return;
+  }
   const { ParserClient } = await import('./parser-client.ts');
+  const { WorkspaceDefinitions } = await import('./workspace-definitions.ts');
   const { tokenDelta } = await import('./highlights.ts');
   const { tokenTypes, tokenModifiers } = await import('kotlin-parser/shared');
-  const output = vscode.window.createOutputChannel('Kotlin Syntax', { log: true });
+  const displayName: string = context.extension.packageJSON.displayName;
+  const commands: { command: string }[] = context.extension.packageJSON.contributes.commands;
+  const showLogsCommand = commands.find(entry => entry.command.endsWith('.showLogs'))!.command;
+  const restartCommand = commands.find(entry => entry.command.endsWith('.restartParser'))!.command;
+  const output = vscode.window.createOutputChannel(displayName, { log: true });
   context.subscriptions.push(output);
-  output.info(`Activating Kotlin Syntax ${context.extension.packageJSON.version}; Node ${process.version}`);
+  output.info(`Activating ${displayName} ${context.extension.packageJSON.version}; Node ${process.version}`);
   let notified = false;
   const client = new ParserClient(undefined, {
     log: (level, message) => output[level](message),
     onBlocked: () => {
       if (notified) return;
       notified = true;
-      void vscode.window.showWarningMessage('Kotlin Syntax: parser paused after repeated failures.', 'Show Logs', 'Restart Parser').then(action => {
+      void vscode.window.showWarningMessage(`${displayName}: parser paused after repeated failures.`, 'Show Logs', 'Restart Parser').then(action => {
         if (action === 'Show Logs') output.show();
-        if (action === 'Restart Parser') void vscode.commands.executeCommand('kotlinSyntax.restartParser');
+        if (action === 'Restart Parser') void vscode.commands.executeCommand(restartCommand);
       });
     },
   });
   const changed = new vscode.EventEmitter<void>();
+  const workspaceDefinitions = new WorkspaceDefinitions(client);
   const legend = new vscode.SemanticTokensLegend(tokenTypes, tokenModifiers);
   const previous = new Map<string, VSCode.SemanticTokens>();
   let serial = 0;
@@ -39,9 +49,33 @@ export async function activate(context: VSCode.ExtensionContext): Promise<void> 
     } finally { subscription.dispose(); }
   }
   context.subscriptions.push(changed,
-    vscode.commands.registerCommand('kotlinSyntax.showLogs', () => output.show()),
-    vscode.commands.registerCommand('kotlinSyntax.restartParser', () => {
-      client.restart(); previous.clear(); notified = false; changed.fire();
+    vscode.languages.registerDefinitionProvider({ language: 'kotlin' }, {
+      async provideDefinition(document, position, cancellation) {
+        if (cancellation.isCancellationRequested || document.isClosed) return;
+        const version = document.version;
+        const controller = new AbortController();
+        const subscription = cancellation.onCancellationRequested(() => controller.abort());
+        try {
+          const offset = document.offsetAt(document.getWordRangeAtPosition(position)?.start ?? position);
+          const data = await client.definitions({ key: document.uri.toString(), version, source: document.getText(), script: document.uri.path.endsWith('.kts') }, offset, controller.signal);
+          if (!data || cancellation.isCancellationRequested || document.isClosed || version !== document.version) return;
+          const links: VSCode.DefinitionLink[] = [];
+          for (let i = 0; i < data.length; i += 4) {
+            links.push({ targetUri: document.uri,
+              targetRange: new vscode.Range(document.positionAt(data[i]), document.positionAt(data[i + 1])),
+              targetSelectionRange: new vscode.Range(document.positionAt(data[i + 2]), document.positionAt(data[i + 3])) });
+          }
+          const resolved = await workspaceDefinitions.resolve(document, links, controller.signal, cancellation, offset);
+          if (cancellation.isCancellationRequested || document.isClosed || version !== document.version) return;
+          return resolved;
+        } catch {
+          return undefined; // Worker failures are reported by the shared client.
+        } finally { subscription.dispose(); }
+      },
+    }),
+    vscode.commands.registerCommand(showLogsCommand, () => output.show()),
+    vscode.commands.registerCommand(restartCommand, () => {
+      client.restart(); workspaceDefinitions.clear(); previous.clear(); notified = false; changed.fire();
     }),
     vscode.languages.registerDocumentSemanticTokensProvider({ language: 'kotlin' }, {
       onDidChangeSemanticTokens: changed.event,
@@ -69,5 +103,5 @@ export async function activate(context: VSCode.ExtensionContext): Promise<void> 
       const key = document.uri.toString();
       client.close(key); previous.delete(key);
     }),
-    { dispose() { void client.dispose(); previous.clear(); } });
+    { dispose() { workspaceDefinitions.dispose(); void client.dispose(); previous.clear(); } });
 }

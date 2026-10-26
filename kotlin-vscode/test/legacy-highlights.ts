@@ -35,8 +35,9 @@ export function highlights(tree: Node): Highlight[] {
       if (parent === 'FUN' && container?.kind === 'CLASS_BODY') type = 'method';
       if (parent === 'LABEL') type = 'label';
       if (!type) {
-        if (parents.some(p => ['PACKAGE_DIRECTIVE', 'IMPORT_DIRECTIVE'].includes(p.kind))) type = 'namespace';
-        else if (parents.some(p => p.kind === 'USER_TYPE')) type = parents.some(p => p.kind === 'CONSTRUCTOR_CALLEE') ? 'decorator' : 'type';
+        if (parents.some(p => p.kind === 'VALUE_ARGUMENT_NAME')) type = 'parameter';
+        else if (parents.some(p => ['PACKAGE_DIRECTIVE', 'IMPORT_DIRECTIVE'].includes(p.kind))) type = 'namespace';
+        else if (parents.some(p => p.kind === 'USER_TYPE')) type = parents.some(p => p.kind === 'CONSTRUCTOR_CALLEE') && parents.some(p => p.kind === 'ANNOTATION_ENTRY') ? 'decorator' : 'type';
         else if (parents.at(-2)?.kind === 'CALL_EXPRESSION') type = 'function';
         else type = 'variable';
       }

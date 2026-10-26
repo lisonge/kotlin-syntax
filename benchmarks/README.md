@@ -18,6 +18,14 @@ The comparison uses Node Workers with the website's transport strategies: JSON p
 
 The typed-array harness also accepts an earlier TypedArray implementation as its baseline. For the highlight-allocation comparison, set `TYPED_ARRAY_BASELINE_DIR=build/highlight-allocation-before` and use a separate `BENCH_OUTPUT_DIR`. Both sides then use identical buffer transfer; the transfer-only case is a control for transport noise.
 
+## Definition navigation
+
+`node benchmarks/definitions.ts` compares production WASM phases and the actual VS Code Worker/client. Its default inputs are 10/100 KiB synthetic files, parser source and a 32-level nested function. It measures parse/classification, index rebuild after a suffix edit, cached queries, tail edits through the Worker, and a definition query queued ahead of highlighting. Front-edit Worker tests default to 10 KiB because direct parsing already covers larger inputs. Each variant/case uses three rounds, with 30 warmups and 100 measured samples per round. Variants run one at a time and alternate order after each sample, with paired ratios to reduce the effect of time-varying machine load. All identifier destinations and highlight outputs are checked for equality outside the timed regions.
+
+Default variants are the pre-navigation build at `build/definition-performance/original-source/kotlin-vscode/dist`, a captured pre-optimization extension at `build/definition-performance/before`, and the current `kotlin-vscode/dist`. Controls compare `original` with `after`; navigation compares `before` with `after`. Capture the complete extension `dist` before optimizing; build the pre-navigation revision in an isolated source directory. These baseline artifacts are local and are not checked in. `DEFINITION_VARIANTS` accepts a JSON array of `{ "name": "before", "directory": "..." }` entries to select other captures; the reserved `original` variant skips definition operations.
+
+`DEFINITION_INPUTS` and `DEFINITION_OPERATIONS` accept comma-separated filters. `DEFINITION_SAMPLES`, `DEFINITION_WARMUP` and `DEFINITION_ROUNDS` override repetition counts. The report contains raw samples, per-round and pooled P50/P95, input/binary hashes, and raw/gzipped WASM sizes. Output defaults to `build/benchmarks/definitions.json` and `definitions.md`; `BENCH_OUTPUT_DIR` selects a separate run directory. Timings exclude rendering, VS Code provider work and cold startup; no retained-memory result is inferred from them.
+
 ## Historical measurements
 
 - [Incremental edit transport](reports/2026-10-25-incremental-transfer/summary.md): versioned deltas versus full snapshots in both consumers, with 300 samples per variant/case, payload sizes, P50/P95 and recovery tests.

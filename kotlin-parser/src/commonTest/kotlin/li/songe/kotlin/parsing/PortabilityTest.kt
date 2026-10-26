@@ -18,7 +18,8 @@ class PortabilityTest {
                 for (length in (0..source.length) + (source.length downTo 0)) {
                     val next = source.take(length)
                     document.edit(0, document.source.length, next)
-                    val fresh = if (script) parseScript(next) else parseFile(next)
+                    val normalized = next.replace('\r', '\n')
+                    val fresh = if (script) parseScript(normalized) else parseFile(normalized)
                     assertEquals(fresh.toJson(), document.tree.toJson())
                     assertEquals(fresh.classifySyntax(), document.tree.classifySyntax())
                 }

@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build:dev": "pnpm --filter kotlin-vscode... build && node kotlin-vscode/scripts/package-dev.ts && cd kotlin-vscode/build/dev-extension && pnpm dlx @vscode/vsce@4.0.0 package --no-dependencies --out ../kotlin-syntax-dev.vsix",
     "dev:website": "pnpm --filter kotlin-parser build && pnpm --filter kotlin-website dev",
     "build": "pnpm -r --sort run build",
     "test": "pnpm build && pnpm test:built",

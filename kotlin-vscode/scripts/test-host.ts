@@ -19,6 +19,15 @@ delete env.ELECTRON_RUN_AS_NODE;
 delete env.VSCODE_IPC_HOOK_CLI;
 let developmentPath = root;
 const vsix = process.env.VSCODE_TEST_VSIX;
+if (process.env.VSCODE_TEST_STABLE_PRESENT === '1') {
+  const fixture = resolve(profile, 'extensions/lisonge.kotlin-vscode-0.0.1');
+  await mkdir(fixture, { recursive: true });
+  await writeFile(resolve(fixture, 'package.json'), JSON.stringify({
+    name: 'kotlin-vscode', publisher: 'lisonge', version: '0.0.1',
+    engines: { vscode: '^1.117.0' }, main: './index.js', activationEvents: [],
+  }));
+  await writeFile(resolve(fixture, 'index.js'), 'exports.activate = () => {};');
+}
 if (vsix) {
   const base = dirname(executable);
   const candidates = [resolve(base, 'resources/app/out/cli.js'), ...(await readdir(base, {withFileTypes:true})).filter(e=>e.isDirectory()).map(e=>resolve(base,e.name,'resources/app/out/cli.js'))];
@@ -36,11 +45,17 @@ if (vsix) {
   env.VSCODE_EXPECT_EXTENSIONS_DIR = resolve(profile,'extensions');
 }
 const logPath = resolve(root, 'build/host.log');
+if (process.env.VSCODE_TEST_WORKSPACE === '1') {
+  env.VSCODE_TEST_WORKSPACE = resolve(profile, 'workspace');
+  await mkdir(env.VSCODE_TEST_WORKSPACE, { recursive: true });
+}
 const log = createWriteStream(logPath);
 const child = spawn(executable, [
   '--extensionDevelopmentPath=' + developmentPath, '--extensionTestsPath=' + resolve(root, 'test/host.ts'),
   '--user-data-dir=' + resolve(profile, 'user-data'), '--extensions-dir=' + resolve(profile, 'extensions'),
+  ...(process.env.VSCODE_TEST_STABLE_DISABLED === '1' ? ['--disable-extension=lisonge.kotlin-vscode'] : []),
   ...(vsix ? [] : ['--disable-extensions']), '--skip-welcome', '--skip-release-notes', '--disable-workspace-trust',
+  ...(env.VSCODE_TEST_WORKSPACE ? [env.VSCODE_TEST_WORKSPACE] : []),
 ], { env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
 child.stdout.pipe(log, { end: false });
 child.stderr.pipe(log, { end: false });

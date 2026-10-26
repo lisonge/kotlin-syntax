@@ -3,10 +3,11 @@ import type { Snapshot, Response, Edit, Request } from './protocol.ts';
 export interface ClientOptions { timeoutMs?: number; maxFailures?: number; log?: (level: 'info' | 'debug' | 'error', message: string) => void; onBlocked?: () => void }
 interface Job {
   request: number; snapshot: Snapshot;
-  resolve(value: Uint32Array | undefined): void; reject(error: Error): void;
+  queueKey: string; definitionOffset?: number; symbols: boolean;
+  resolve(value: Uint32Array | string | undefined): void; reject(error: Error): void;
   cleanup(): void; settled: boolean;
 }
-/** One running request plus the latest queued snapshot per document. */
+/** One running request plus the latest queued request per document and operation. */
 export class ParserClient {
   private worker?: Worker;
   private active?: Job;
@@ -46,25 +47,35 @@ export class ParserClient {
   }
   constructor(url: URL = new URL(import.meta.url.endsWith('.ts') ? './parser-worker.ts' : './parser-worker.js', import.meta.url), options: ClientOptions = {}) { this.url = url; this.options = options; }
   request(snapshot: Snapshot, signal?: AbortSignal): Promise<Uint32Array | undefined> {
+    return this.enqueue(snapshot, signal) as Promise<Uint32Array | undefined>;
+  }
+  definitions(snapshot: Snapshot, offset: number, signal?: AbortSignal): Promise<Uint32Array | undefined> {
+    return this.enqueue(snapshot, signal, offset) as Promise<Uint32Array | undefined>;
+  }
+  symbols(snapshot: Snapshot, signal?: AbortSignal, offset?: number): Promise<string | undefined> { return this.enqueue(snapshot, signal, offset, true) as Promise<string | undefined>; }
+  private enqueue(snapshot: Snapshot, signal?: AbortSignal, definitionOffset?: number, symbols = false): Promise<Uint32Array | string | undefined> {
     if (this.disposed) return Promise.reject(new Error('Parser client disposed'));
     if (this.blocked) return Promise.reject(new Error('Parser paused after repeated failures; restart the parser to retry'));
     if (signal?.aborted) return Promise.resolve(undefined);
-    this.invalidate(snapshot.key);
+    const queueKey = `${symbols ? 'symbols' : definitionOffset === undefined ? 'tokens' : 'definitions'}:${snapshot.key}`;
+    this.invalidate(snapshot.key, queueKey, snapshot.version);
     return new Promise((resolve, reject) => {
-      const job: Job = { request: ++this.serial, snapshot, resolve, reject, settled: false, cleanup: () => signal?.removeEventListener('abort', abort) };
+      const job: Job = { request: ++this.serial, snapshot, queueKey, definitionOffset, symbols, resolve, reject, settled: false, cleanup: () => signal?.removeEventListener('abort', abort) };
       const abort = () => {
         this.finish(job);
-        if (this.queued.get(snapshot.key) === job) this.queued.delete(snapshot.key);
+        if (this.queued.get(queueKey) === job) this.queued.delete(queueKey);
       };
       signal?.addEventListener('abort', abort, { once: true });
-      this.queued.set(snapshot.key, job);
+      this.queued.set(queueKey, job);
       this.pump();
     });
   }
-  invalidate(key: string): void {
-    if (this.active?.snapshot.key === key) this.finish(this.active);
-    const queued = this.queued.get(key);
-    if (queued) { this.finish(queued); this.queued.delete(key); }
+  invalidate(key: string, queueKey?: string, version?: number): void {
+    const matches = (job: Job) => job.snapshot.key === key && (queueKey === undefined || job.queueKey === queueKey || job.snapshot.version !== version);
+    if (this.active && matches(this.active)) this.finish(this.active);
+    for (const [queuedKey, job] of this.queued) {
+      if (matches(job)) { this.finish(job); this.queued.delete(queuedKey); }
+    }
   }
   change(key: string, version: number, edits: Edit[]): void {
     this.invalidate(key);
@@ -80,7 +91,7 @@ export class ParserClient {
     this.invalidate(key);
     try { this.worker?.postMessage({ kind: 'close', key }); } catch (error) { this.fail(error instanceof Error ? error : new Error(String(error))); }
   }
-  private finish(job: Job, data?: Uint32Array, error?: Error) {
+  private finish(job: Job, data?: Uint32Array | string, error?: Error) {
     if (job.settled) return;
     job.settled = true; job.cleanup();
     if (error) job.reject(error); else job.resolve(data);
@@ -98,7 +109,7 @@ export class ParserClient {
         if (response.kind === 'resync') {
           const job = this.active;
           if (!job.settled) {
-            worker.postMessage({ kind: 'parse', request: job.request, snapshot: job.snapshot } satisfies Request);
+            worker.postMessage({ kind: 'parse', request: job.request, snapshot: job.snapshot, definitionOffset: job.definitionOffset, symbols: job.symbols } satisfies Request);
             return;
           }
           this.clearTimer(); this.active = undefined; this.pump();
@@ -106,7 +117,7 @@ export class ParserClient {
           return;
         }
         if (response.kind === 'error') { this.fail(new Error(response.error)); return; }
-        if (response.kind !== 'result' || !(response.data instanceof Uint32Array) || response.data.length % 5 !== 0 || response.version !== this.active.snapshot.version) {
+        if ((this.active.symbols ? response.kind !== 'symbols' || typeof response.data !== 'string' : response.kind !== 'result' || !(response.data instanceof Uint32Array) || response.data.length % (this.active.definitionOffset === undefined ? 5 : 4) !== 0) || response.version !== this.active.snapshot.version) {
           this.fail(new Error('Invalid parser response')); return;
         }
         this.clearTimer(); this.failures = 0;
@@ -123,8 +134,11 @@ export class ParserClient {
       worker.on('error', failed);
       worker.on('exit', code => failed(new Error(`Parser worker exited (${code})`)));
     }
-    const job = this.queued.values().next().value!;
-    this.queued.delete(job.snapshot.key); this.active = job;
+    let job = this.queued.values().next().value!;
+    if (job.symbols) for (const candidate of this.queued.values()) {
+      if (!candidate.symbols) { job = candidate; break; }
+    }
+    this.queued.delete(job.queueKey); this.active = job;
     this.started = Date.now();
     this.log('debug', `Request ${job.request}: version=${job.snapshot.version}, length=${job.snapshot.source.length}, script=${job.snapshot.script}`);
     this.timer = setTimeout(() => this.fail(new Error(`Parser request ${job.request} timed out`)), this.options.timeoutMs ?? 30_000);
@@ -132,10 +146,10 @@ export class ParserClient {
     const { key, version, script } = job.snapshot;
     const state = this.documents.get(key);
     if (state && state.version === version && state.script === script) {
-      this.worker.postMessage({ kind: 'edit', request: job.request, key, baseVersion: state.baseVersion, version, script, batches: state.batches } satisfies Request);
+      this.worker.postMessage({ kind: 'edit', request: job.request, key, baseVersion: state.baseVersion, version, script, batches: state.batches, definitionOffset: job.definitionOffset, symbols: job.symbols } satisfies Request);
       state.baseVersion = version; state.batches = [];
     } else {
-      this.worker.postMessage({ kind: 'parse', request: job.request, snapshot: job.snapshot } satisfies Request);
+      this.worker.postMessage({ kind: 'parse', request: job.request, snapshot: job.snapshot, definitionOffset: job.definitionOffset, symbols: job.symbols } satisfies Request);
       this.documents.set(key, { version, baseVersion: version, script, batches: [] });
     }
     } catch (error) { this.fail(error instanceof Error ? error : new Error(String(error))); }

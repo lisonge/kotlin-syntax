@@ -4,26 +4,31 @@
 
 [Live Demo](https://kotlin-syntax.pages.dev) | [Install VS Code Extension](https://marketplace.visualstudio.com/items?itemName=lisonge.kotlin-vscode)
 
-Kotlin Syntax is a Kotlin Multiplatform library for parsing and classifying Kotlin syntax, with a VS Code extension and an online playground powered by the same parser.
+Kotlin Syntax is a Kotlin Multiplatform library for parsing and classifying Kotlin source, with a VS Code extension and an online playground powered by the same parser.
 
-<img alt="Image" src="https://github.com/user-attachments/assets/81700a18-8414-417d-a8a1-fb0aa83df866" />
+<img referrerpolicy="no-referrer" alt="Kotlin highlighting in the web playground with One Dark Pro" src="https://github.com/user-attachments/assets/a0150858-991f-4b0e-a135-c72bd19e647a" />
 
 ## Features
 
-- Parse Kotlin files (`.kt`) and scripts (`.kts`) into lossless syntax trees that preserve whitespace, comments and syntax errors.
-- Produce typed syntax classifications and update documents with incremental parsing.
-- Use the library on JVM and Wasm, or integrate the JVM library into Android applications.
-- Highlight Kotlin in VS Code through a background Worker, or explore it in the React playground with the One Dark Pro theme.
+- **Parsing:** Parse `.kt` files and `.kts` scripts into lossless syntax trees that preserve whitespace, comments and syntax errors. The parser follows the official Kotlin parsing flow, with differential tests against the pinned compiler version. Incremental documents support updates after edits. The library targets JVM and Wasm; Android applications can use the JVM library.
+- **Highlighting:** Combine syntax with single-file declarations, explicit types and supported usage-based inference. Highlighting stays within the current file and does not scan the workspace. Both editors use the same classifications; VS Code follows your selected theme, while the playground uses One Dark Pro.
+- **Navigation:** Find declarations, supported members, callable references and named parameters in the current file. VS Code also searches workspace Kotlin sources on demand using package and import information. Ambiguous matches remain candidates; unresolved explicit imports can retain their import destination.
 
-Tests compare parsing against the official Kotlin compiler. Highlighting is based on syntax; symbol resolution and type checking are outside the project's scope. See [compatibility and limitations](docs/compatibility.md) for the tested syntax and platform coverage.
+| Capability | VS Code extension | Web playground |
+| --- | --- | --- |
+| Highlighting and document updates | Yes, in a background Worker | Yes, in a background Worker |
+| Same-file definition navigation | Yes | Yes |
+| Workspace source navigation | Yes, on demand | No |
+
+The project does not provide compiler-level type checking, complete type inference or Gradle dependency resolution. See [compatibility and limitations](docs/compatibility.md) for the tested syntax target and supported analysis. The [extension guide](kotlin-vscode/README.md) explains installation, highlighting rules and navigation behavior.
 
 ## Modules
 
-| Module                            | Purpose                                                                         |
-| --------------------------------- | ------------------------------------------------------------------------------- |
-| [kotlin-parser](kotlin-parser/)   | Portable parser, syntax trees, incremental documents and syntax classifications |
-| [kotlin-vscode](kotlin-vscode/)   | VS Code extension using the parser in a Worker                                  |
-| [kotlin-website](kotlin-website/) | Interactive playground using the same parser                                    |
+| Module | Purpose |
+| --- | --- |
+| [kotlin-parser](kotlin-parser/) | Portable parser, syntax trees, incremental documents, classifications and single-file navigation |
+| [kotlin-vscode](kotlin-vscode/) | VS Code highlighting and definition navigation using the parser in a Worker |
+| [kotlin-website](kotlin-website/) | Interactive playground using the same parser |
 
 ## Documentation
 

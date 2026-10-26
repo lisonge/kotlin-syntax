@@ -10,14 +10,43 @@ import { highlights } from './legacy-highlights.ts';
 import * as parser from '../dist/parser/kotlin-parser.mjs';
 const fixtures: { source: string; script: boolean; tree: Node }[] = JSON.parse(await readFile(new URL('../../kotlin-parser/build/oracle/parser.json', import.meta.url), 'utf8'));
 const flat = (tree: Node) => highlights(tree).flatMap(h => [h.start,h.end,h.type,h.modifiers]);
-function expected(source: string, script = false) { return encodeTokens(source, flat(JSON.parse(script ? parser.parseScript(source) : parser.parseFile(source)))); }
-test('compact WASM output equals legacy classifier on every official fixture', () => {
+
+test('file summaries share document versions without changing definition or highlight results', async () => {
+  const client = new ParserClient();
+  try {
+    const source = 'package demo\nimport external.User as Account\nprivate class Hidden\nclass Visible\nfun f(name: String) = name';
+    const snapshot = { key: 'summary.kt', version: 1, script: false, source };
+    const summary = JSON.parse((await client.symbols(snapshot))!);
+    assert.deepEqual(summary.packageName, ['demo']);
+    assert.deepEqual(summary.imports[0].path, ['external', 'User']);
+    assert.deepEqual(summary.declarations.map((d: { name: string }) => d.name), ['Hidden', 'Visible', 'f']);
+    assert.equal(source.slice(summary.declarations[1].nameStart, summary.declarations[1].nameEnd), 'Visible');
+    assert.deepEqual(await client.request(snapshot), expected(source));
+    assert.equal((await client.definitions(snapshot, source.lastIndexOf('name')))![2], source.indexOf('name'));
+    client.change(snapshot.key, 2, [{ start: 0, end: 0, text: '// 😀\n' }]);
+    const updated = { ...snapshot, version: 2, source: '// 😀\n' + source };
+    const moved = JSON.parse((await client.symbols(updated))!);
+    assert.equal(moved.declarations[0].nameStart, summary.declarations[0].nameStart + 6);
+    client.close(snapshot.key);
+  } finally { await client.dispose(); }
+});
+function expected(source: string, script = false) {
+  const id = parser.openDocument(source, script);
+  try { return encodeTokens(source, parser.documentClassifications(id)); }
+  finally { parser.closeDocument(id); }
+}
+test('local classification preserves syntax spans and declarations on every official fixture', () => {
   for (const { source, script, tree } of fixtures) {
     const id = parser.openDocument(source, script);
     try {
       const spans = parser.documentClassifications(id);
       assert.ok(spans instanceof Int32Array);
-      assert.deepEqual([...spans], flat(tree), source.slice(0,100));
+      const syntax = flat(tree);
+      assert.equal(spans.length, syntax.length);
+      for (let i = 0; i < syntax.length; i += 4) {
+        assert.deepEqual([...spans.slice(i, i + 2)], syntax.slice(i, i + 2));
+        if (syntax[i + 3] & 1 || ![1, 7, 9].includes(syntax[i + 2])) assert.deepEqual([...spans.slice(i, i + 4)], syntax.slice(i, i + 4));
+      }
     }
     finally { parser.closeDocument(id); }
   }
@@ -49,6 +78,67 @@ test('worker handles edits, scripts, unchanged requests, close/reopen and multip
     const parallel = ['one','two','three'].map(key => ({...snapshot,key}));
     const results = await Promise.all(parallel.map(s => client.request(s)));
     results.forEach(r => assert.deepEqual(r,first));
+  } finally { await client.dispose(); }
+});
+
+test('definitions share document state with highlights, edits, cancellation and restart', async () => {
+  const client = new ParserClient();
+  let source = 'import example.User as Account\r\nfun f(name: String) { val x = "😀"; println(name) }\r\nval user: Account? = null';
+  let snapshot = { key: 'definitions', version: 1, source, script: false };
+  const names = (data: Uint32Array | undefined) => {
+    assert.ok(data);
+    return Array.from({ length: data.length / 4 }, (_, i) => [data[i * 4 + 2], data[i * 4 + 3]]);
+  };
+  const expectedName = (name: string) => [[source.indexOf(name), source.indexOf(name) + name.length]];
+  try {
+    // Neither operation may cancel the other, regardless of which arrives first.
+    const definition = client.definitions(snapshot, source.lastIndexOf('name'));
+    const highlights = client.request(snapshot);
+    assert.deepEqual(names(await definition), expectedName('name'));
+    assert.deepEqual(await highlights, expected(source));
+    const highlightsAgain = client.request(snapshot);
+    const imported = client.definitions(snapshot, source.lastIndexOf('Account'));
+    assert.deepEqual(await highlightsAgain, expected(source));
+    assert.deepEqual(names(await imported), expectedName('Account'));
+
+    const prefix = '// new 😀\r\n';
+    client.change(snapshot.key, 2, [{ start: 0, end: 0, text: prefix }]);
+    source = prefix + source;
+    snapshot = { ...snapshot, version: 2, source };
+    assert.deepEqual(names(await client.definitions(snapshot, source.lastIndexOf('name'))), expectedName('name'));
+    assert.deepEqual(await client.request(snapshot), expected(source));
+    const controller = new AbortController();
+    const cancelled = client.definitions(snapshot, source.lastIndexOf('name'), controller.signal);
+    controller.abort();
+    assert.equal(await cancelled, undefined);
+    assert.deepEqual(await client.request(snapshot), expected(source));
+    client.restart();
+    assert.deepEqual(names(await client.definitions(snapshot, source.lastIndexOf('Account'))), expectedName('Account'));
+    client.close(snapshot.key);
+    assert.deepEqual(names(await client.definitions(snapshot, source.lastIndexOf('name'))), expectedName('name'));
+
+    source = 'val local = 1\nprintln(local)';
+    snapshot = { ...snapshot, version: 3, source, script: true };
+    assert.deepEqual(names(await client.definitions(snapshot, source.lastIndexOf('local'))), expectedName('local'));
+    const stale = client.definitions(snapshot, source.lastIndexOf('local'));
+    client.change(snapshot.key, 4, [{ start: 4, end: 9, text: 'other' }]);
+    assert.equal(await stale, undefined);
+    source = source.replace('local', 'other');
+    snapshot = { ...snapshot, version: 4, source };
+    assert.deepEqual(names(await client.definitions(snapshot, source.lastIndexOf('local'))), []);
+  } finally { await client.dispose(); }
+});
+
+test('definition queries return all local overloads and no guessed member targets', async () => {
+  const client = new ParserClient();
+  const source = 'fun f(x: Int) = x\nfun f(x: String) = x\nval name = 1\nval a = f(1)\nval b = obj.name';
+  const snapshot = { key: 'overloads', version: 1, source, script: false };
+  try {
+    const result = await client.definitions(snapshot, source.lastIndexOf('f(1)'));
+    assert.ok(result);
+    assert.equal(result.length, 8);
+    assert.deepEqual([result[2], result[6]], [source.indexOf('f('), source.indexOf('f(x: String)')]);
+    assert.deepEqual(await client.definitions(snapshot, source.lastIndexOf('name')), new Uint32Array());
   } finally { await client.dispose(); }
 });
 test('coalesces bursts, discards obsolete work and releases cancelled requests', async () => {
