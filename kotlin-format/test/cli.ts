@@ -137,6 +137,43 @@ test('cached formatting isolates sibling directory configurations', async t => {
   assert.equal(run(dir, ['.', '--check', '--cache']).status, 0);
 });
 
+test('CLI config reuse respects inherited configs, package boundaries and explicit overrides', async t => {
+  const dir = await fixture(t);
+  await writeFile(join(dir, 'kotlin-format.json'), '{"style":"GOOGLE"}');
+  const paths = ['src/a.kt', 'src/b.kt', 'other/a.kt', 'module/src/a.kt', 'module/src/b.kt'];
+  for (const directory of ['src', 'other', 'module/src']) await mkdir(join(dir, directory), { recursive: true });
+  await writeFile(join(dir, 'module', 'package.json'), '{}');
+  for (const path of paths) await writeFile(join(dir, path), raw);
+  const first = run(dir, ['--write', ...paths]);
+  assert.equal(first.status, 0, first.stderr);
+  for (const path of paths) {
+    assert.equal(await readFile(join(dir, path), 'utf8'), path.startsWith('module/') ? formatted : formatted.replace('    ', '  '));
+  }
+  // A subsequent invocation must discover a config added after the previous run.
+  await writeFile(join(dir, 'module', 'kotlin-format.json'), '{"style":"GOOGLE"}');
+  const second = run(dir, ['--write', ...paths]);
+  assert.equal(second.status, 0, second.stderr);
+  assert.equal(second.stdout, ['module/src/a.kt', 'module/src/b.kt'].map(p => `${join(dir, p)}\n`).join(''));
+  await writeFile(join(dir, 'override.json'), '{"style":"KOTLINLANG"}');
+  const overridden = run(dir, ['--write', '--config', 'override.json', ...paths]);
+  assert.equal(overridden.status, 0, overridden.stderr);
+  for (const path of paths) assert.equal(await readFile(join(dir, path), 'utf8'), formatted);
+});
+
+test('shared invalid directory configuration reports each affected file and continues other directories', async t => {
+  const dir = await fixture(t);
+  await mkdir(join(dir, 'bad'));
+  await writeFile(join(dir, 'bad', 'kotlin-format.json'), '{"style":"BAD"}');
+  for (const path of ['bad/a.kt', 'bad/b.kt', 'good.kt']) await writeFile(join(dir, path), raw);
+  const result = run(dir, ['--write']);
+  assert.equal(result.status, 2);
+  for (const path of ['bad/a.kt', 'bad/b.kt']) {
+    assert.ok(result.stderr.includes(`${join(dir, path)}:`));
+    assert.equal(await readFile(join(dir, path), 'utf8'), raw);
+  }
+  assert.equal(await readFile(join(dir, 'good.kt'), 'utf8'), formatted);
+});
+
 test('built CLI supports stdin, scripts, unicode, line endings, help and version', async t => {
   const dir = await fixture(t);
   assert.equal(run(dir, [], raw).stdout, formatted);

@@ -1,8 +1,7 @@
 # What's Changed
 
-## 0.0.10
+## 0.0.11
 
-- Added opt-in persistent caching to the `kotlin-format` CLI with `--cache` and `--cache-location` for file-based write/check runs.
-- Cache entries track source content, resolved formatting options, script mode, and formatter/Node versions; fully cached runs skip WASM initialization.
-- Preserved upstream single-pass formatting behavior by caching only files verified to need no changes, with regression coverage for restored content and independent directory configurations.
-- Serialized parser and formatter builds to avoid concurrent Gradle processes writing the same parser output directory.
+- Reduced repeated filesystem queries in batch CLI runs by reusing project roots and resolved formatting options within each invocation.
+- Preserved directory-specific configuration, package boundaries, explicit overrides, and per-file error reporting with additional regression tests.
+- Added reproducible CLI startup, formatting, cache, and filesystem benchmarks with fresh-process samples and output verification.

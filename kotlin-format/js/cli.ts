@@ -52,9 +52,28 @@ async function main() {
   if (stdin && process.stdin.isTTY) throw new Error('Provide a file path or pipe source to stdin');
 
   let formatter: Promise<typeof import('../dist/kotlin-format.mjs')> | undefined;
-  async function optionsFor(file: string) {
-    const config: FormatConfig = { ...await loadConfig(file, { configPath: values.config }), ...cliConfig };
-    return resolveOptions(config);
+  const roots = new Map<string, Promise<string>>();
+  const optionsByDirectory = new Map<string, Promise<ReturnType<typeof resolveOptions>>>();
+  function rootFor(file: string) {
+    const directory = dirname(file);
+    let root = roots.get(directory);
+    if (!root) { root = projectRoot(file); roots.set(directory, root); }
+    return root;
+  }
+  function optionsFor(file: string) {
+    const key = values.config ? resolve(values.config) : dirname(file);
+    let options = optionsByDirectory.get(key);
+    if (!options) {
+      options = (async () => {
+        const config: FormatConfig = { ...await loadConfig(file, {
+          configPath: values.config,
+          root: values.config ? undefined : await rootFor(file),
+        }), ...cliConfig };
+        return resolveOptions(config);
+      })();
+      optionsByDirectory.set(key, options);
+    }
+    return options;
   }
   async function format(source: string, file: string, o: ReturnType<typeof resolveOptions>) {
     const { formatWithOptions } = await (formatter ??= import('../dist/kotlin-format.mjs'));
@@ -75,7 +94,7 @@ async function main() {
   const files = new Set<string>();
   const ignoreCache = new Map<string, ReturnType<typeof ignore>>();
   async function ignored(path: string, directory: boolean) {
-    const root = await projectRoot(path);
+    const root = await rootFor(path);
     const parts = relative(root, path).split(sep);
     let current = root;
     const inherited: { base: string; rules: ReturnType<typeof ignore> }[] = [];

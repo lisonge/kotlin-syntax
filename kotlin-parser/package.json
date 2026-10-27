@@ -1,7 +1,7 @@
 {
   "name": "kotlin-parser",
   "description": "Kotlin parser powered by WebAssembly, with syntax trees, incremental parsing and semantic token classification.",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
