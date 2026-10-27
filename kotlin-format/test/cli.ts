@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, rm, stat, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,6 +11,7 @@ import { formatCode } from '../dist/kotlin-format.mjs';
 const cli = fileURLToPath(new URL('../dist/cli.mjs', import.meta.url));
 const raw = 'fun f(){println("😀")}';
 const formatted = 'fun f() {\n    println("😀")\n}\n';
+const defaultCache = 'node_modules/.cache/kotlin-format/cache.json';
 async function fixture(t: TestContext) {
   const dir = await mkdtemp(join(tmpdir(), 'kotlin-format-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
@@ -22,6 +23,119 @@ function run(cwd: string, args: string[], input = '', executable = cli) {
   assert.ifError(result.error);
   return result;
 }
+
+test('persistent cache skips WASM loading and invalidates on content, options and version', async t => {
+  const dir = await fixture(t);
+  await cp(new URL('../dist/', import.meta.url), join(dir, 'dist'), { recursive: true });
+  await cp(new URL('../package.json', import.meta.url), join(dir, 'package.json'));
+  const executable = join(dir, 'dist', 'cli.mjs');
+  const file = join(dir, 'a.kt');
+  await writeFile(file, formatted);
+  const args = ['a.kt', '--check', '--cache'];
+  assert.equal(run(dir, args, '', executable).status, 0);
+  // Remove only this fixture's formatter: a cache hit must not import it.
+  await rm(join(dir, 'dist', 'kotlin-format.mjs'));
+  await utimes(file, new Date(), new Date());
+  assert.equal(run(dir, args, '', executable).status, 0);
+  assert.equal(run(dir, ['a.kt', '--write', '--cache'], '', executable).status, 0);
+  const cached = await readFile(join(dir, defaultCache), 'utf8');
+  assert.equal(run(dir, [...args, '--max-width', '40'], '', executable).status, 2);
+  await writeFile(join(dir, defaultCache), cached);
+  await writeFile(join(dir, 'kotlin-format.json'), '{"maxWidth":40}');
+  assert.equal(run(dir, args, '', executable).status, 2);
+  await rm(join(dir, 'kotlin-format.json'));
+  await writeFile(join(dir, defaultCache), cached);
+  const info = await stat(file);
+  await writeFile(file, formatted.replace('println', 'printLn'));
+  await utimes(file, info.atime, info.mtime);
+  assert.equal(run(dir, args, '', executable).status, 2);
+  await writeFile(file, formatted);
+  await writeFile(join(dir, defaultCache), cached);
+  const pkg = JSON.parse(await readFile(join(dir, 'package.json'), 'utf8'));
+  await writeFile(join(dir, 'package.json'), JSON.stringify({ ...pkg, version: '0.0.0-test' }));
+  assert.equal(run(dir, args, '', executable).status, 2);
+});
+
+test('cache preserves check failures and upstream non-idempotence after writing', async t => {
+  const dir = await fixture(t);
+  const file = join(dir, 'a.kt');
+  const cachePath = join(dir, '.cache', 'format.json');
+  const flags = ['--cache', '--cache-location', cachePath, '--max-width', '49'];
+  const source = 'fun f() {\n  @Annotation // test a comment after annotations\n  return 5\n}';
+  await writeFile(file, source);
+  assert.equal(run(dir, ['a.kt', '--write', ...flags]).status, 0);
+  const first = await readFile(file, 'utf8');
+  assert.deepEqual(JSON.parse(await readFile(cachePath, 'utf8')).entries, {});
+  for (let i = 0; i < 2; i++) assert.equal(run(dir, ['a.kt', '--check', ...flags]).status, 1);
+  assert.equal(run(dir, ['a.kt', '--write', ...flags]).status, 0);
+  assert.notEqual(await readFile(file, 'utf8'), first);
+  await writeFile(file, formatted);
+  assert.equal(run(dir, ['a.kt', '--check', ...flags]).status, 0);
+  const cached = await readFile(cachePath, 'utf8');
+  assert.equal(run(dir, ['a.kt', '--check']).status, 0);
+  assert.equal(await readFile(cachePath, 'utf8'), cached);
+  assert.equal(run(dir, ['a.kt', ...flags]).stdout, formatted);
+  assert.equal(run(dir, flags, raw).stdout, formatted);
+  await writeFile(file, 'fun {');
+  assert.equal(run(dir, ['a.kt', '--check', ...flags]).status, 2);
+  assert.deepEqual(JSON.parse(await readFile(cachePath, 'utf8')).entries, {});
+});
+
+test('cached formatting repairs restored original content before and after warming the cache', async t => {
+  const dir = await fixture(t);
+  const file = join(dir, 'a.kt');
+  for (const warmCache of [false, true]) {
+    await writeFile(file, raw);
+    const first = run(dir, ['a.kt', '--write', '--cache']);
+    assert.equal(first.status, 0, first.stderr);
+    assert.equal(await readFile(file, 'utf8'), formatted);
+    if (warmCache) {
+      const checked = run(dir, ['a.kt', '--check', '--cache']);
+      assert.equal(checked.status, 0, checked.stderr);
+    }
+    await writeFile(file, raw);
+    // Go directly back to write: a check here could clear an incorrect cache entry.
+    const restored = run(dir, ['a.kt', '--write', '--cache']);
+    assert.equal(restored.status, 0, restored.stderr);
+    assert.equal(restored.stdout, `${file}\n`);
+    assert.equal(await readFile(file, 'utf8'), formatted);
+  }
+});
+
+test('cached formatting isolates sibling directory configurations', async t => {
+  const dir = await fixture(t);
+  const left = join(dir, 'left', 'a.kt');
+  const right = join(dir, 'right', 'a.kt');
+  for (const name of ['left', 'right']) await mkdir(join(dir, name));
+  await writeFile(join(dir, 'left', 'kotlin-format.json'), '{"style":"KOTLINLANG"}');
+  await writeFile(join(dir, 'right', 'kotlin-format.json'), '{"style":"GOOGLE"}');
+  await writeFile(left, raw);
+  await writeFile(right, raw);
+  const twoSpaces = formatted.replace('    ', '  ');
+  const written = run(dir, ['.', '--write', '--cache']);
+  assert.equal(written.status, 0, written.stderr);
+  assert.equal(await readFile(left, 'utf8'), formatted);
+  assert.equal(await readFile(right, 'utf8'), twoSpaces);
+  const checked = run(dir, ['.', '--check', '--cache']);
+  assert.equal(checked.status, 0, checked.stderr);
+  const before = JSON.parse(await readFile(join(dir, defaultCache), 'utf8')).entries;
+  assert.equal(typeof before[left], 'string');
+  assert.equal(typeof before[right], 'string');
+
+  await writeFile(join(dir, 'right', 'kotlin-format.json'), '{"style":"KOTLINLANG"}');
+  const changed = run(dir, ['.', '--check', '--cache']);
+  assert.equal(changed.status, 1, changed.stderr);
+  assert.equal(changed.stdout, `${right}\n`);
+  const after = JSON.parse(await readFile(join(dir, defaultCache), 'utf8')).entries;
+  assert.equal(after[left], before[left]);
+  assert.equal(after[right], undefined);
+  const repaired = run(dir, ['.', '--write', '--cache']);
+  assert.equal(repaired.status, 0, repaired.stderr);
+  assert.equal(repaired.stdout, `${right}\n`);
+  assert.equal(await readFile(left, 'utf8'), formatted);
+  assert.equal(await readFile(right, 'utf8'), formatted);
+  assert.equal(run(dir, ['.', '--check', '--cache']).status, 0);
+});
 
 test('built CLI supports stdin, scripts, unicode, line endings, help and version', async t => {
   const dir = await fixture(t);
