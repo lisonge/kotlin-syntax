@@ -19,6 +19,7 @@ Kotlin Syntax 是一个用于 Kotlin 源码解析和语法分类的 Kotlin Multi
 | 高亮与文档更新 | 支持，在后台 Worker 中运行 | 支持，在后台 Worker 中运行 |
 | 本文件定义跳转 | 支持 | 支持 |
 | 工作区源码跳转 | 支持，按需查找 | 不支持 |
+| 兼容 ktfmt 的整文件格式化 | 支持，在独立 Worker 中运行 | 不支持 |
 
 项目不提供编译器级类型检查、完整类型推断或 Gradle 依赖解析。已测试的语法目标与分析范围详见[兼容性与限制](docs/compatibility.md)。安装、高亮规则和跳转行为见[扩展使用说明](kotlin-vscode/README.md)。
 
@@ -27,6 +28,7 @@ Kotlin Syntax 是一个用于 Kotlin 源码解析和语法分类的 Kotlin Multi
 | 模块 | 用途 |
 | --- | --- |
 | [kotlin-parser](kotlin-parser/) | 跨平台解析器、语法树、增量文档、分类与单文件跳转 |
+| [kotlin-format](kotlin-format/) | 跨平台 ktfmt 0.65 格式化，使用移植的 google-java-format 1.23.0 排版引擎 |
 | [kotlin-vscode](kotlin-vscode/) | 在 Worker 中运行解析器，提供 VS Code 高亮与定义跳转 |
 | [kotlin-website](kotlin-website/) | 基于同一解析器的交互式演示应用 |
 
@@ -35,11 +37,13 @@ Kotlin Syntax 是一个用于 Kotlin 源码解析和语法分类的 Kotlin Multi
 以下详细文档目前为英文。
 
 - [Kotlin 与 Android 集成](docs/kotlin-api.md)
+- [格式化 API 与上游版本对齐](docs/formatting.md)
 - [本地开发与构建](docs/development.md)
 - [项目架构](docs/architecture.md)
 - [兼容性与限制](docs/compatibility.md)
 - [测试与发布](docs/testing.md)
 - [上游升级](docs/upstream-upgrade.md)
+- [上游源码同步与归属说明](docs/upstream-sources.md)
 - [性能基准](benchmarks/README.md)
 
 ## 许可证

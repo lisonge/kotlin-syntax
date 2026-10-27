@@ -29,7 +29,7 @@ export const tokenModifiers: string[] = ${JSON.stringify(modifiers)};
 await build({
   config: false,
   cwd: resolve(root, 'kotlin-parser'),
-  entry: ['js/index.ts', 'js/shared.ts'],
+  entry: ['js/editor.ts'],
   deps: { neverBundle: ['../dist/kotlin-parser.mjs'] },
   outputOptions: {
     paths: id => id.replace(/^(?:.*[/\\])?kotlin-parser\.mjs$/, './kotlin-parser.mjs'),

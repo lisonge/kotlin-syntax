@@ -3,16 +3,18 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build:dev": "pnpm --filter kotlin-vscode... build && node kotlin-vscode/scripts/package-dev.ts && cd kotlin-vscode/build/dev-extension && pnpm dlx @vscode/vsce@4.0.0 package --no-dependencies --out ../kotlin-syntax-dev.vsix",
+    "build:dev": "pnpm --filter kotlin-parser --filter kotlin-format build && pnpm --filter kotlin-vscode build && node kotlin-vscode/scripts/package-dev.ts && cd kotlin-vscode/build/dev-extension && pnpm dlx @vscode/vsce@4.0.0 package --no-dependencies --out ../kotlin-syntax-dev.vsix",
     "dev:website": "pnpm --filter kotlin-parser build && pnpm --filter kotlin-website dev",
-    "build": "pnpm -r --sort run build",
+    "build": "pnpm --filter kotlin-parser --filter kotlin-format build && pnpm --filter kotlin-vscode --filter kotlin-website build",
     "test": "pnpm build && pnpm test:built",
     "generate": "pnpm --filter kotlin-parser generate",
-    "typecheck": "tsc -p tsconfig.json && tsc -p kotlin-vscode/tsconfig.json --noEmit && pnpm --filter kotlin-website typecheck",
+    "generate:check": "pnpm --filter kotlin-parser generate:check",
+    "upstream:sync": "node scripts/sync-upstream.ts",
+    "typecheck": "tsc -p tsconfig.json && pnpm --filter kotlin-parser typecheck && pnpm --filter kotlin-format typecheck && tsc -p kotlin-vscode/tsconfig.json --noEmit && pnpm --filter kotlin-website typecheck",
     "test:extension": "pnpm --filter kotlin-vscode test:host",
     "benchmark": "node benchmarks/parser.ts",
     "benchmark:builder": "node benchmarks/builder.ts",
-    "test:built": "node scripts/gradle.ts :kotlin-parser:jvmTest :kotlin-parser:wasmJsNodeTest && pnpm --filter kotlin-parser test:bundle && pnpm --filter kotlin-vscode test && pnpm --filter kotlin-website test"
+    "test:built": "node scripts/gradle.ts :kotlin-parser:jvmTest :kotlin-parser:wasmJsNodeTest :kotlin-format:jvmTest :kotlin-format:wasmJsNodeTest && pnpm --filter kotlin-parser test:bundle && pnpm --filter kotlin-format test:bundle && pnpm --filter kotlin-format test:cli && pnpm --filter kotlin-vscode test && pnpm --filter kotlin-website test"
   },
   "devEngines": {
     "packageManager": {
@@ -27,15 +29,19 @@
     }
   },
   "devDependencies": {
-    "@types/node": "26.6.5",
-    "typescript": "7.0.2",
-    "tsdown": "^0.23.2",
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "@vitejs/plugin-react": "^6.0.0",
-    "vite": "^8.0.0",
-    "tailwindcss": "^4.1.0",
-    "@tailwindcss/vite": "^4.1.0"
+    "kotlin-parser": "workspace:*",
+    "kotlin-format": "workspace:*",
+    "ignore": "catalog:",
+    "@types/vscode": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "tsdown": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "vite": "catalog:",
+    "tailwindcss": "catalog:",
+    "@tailwindcss/vite": "catalog:"
   },
   "license": "Apache-2.0",
   "repository": {

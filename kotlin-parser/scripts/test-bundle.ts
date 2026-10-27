@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises';
 import { deepStrictEqual, strictEqual } from 'node:assert';
-// The shared entry must work even in an environment without a WASM engine.
+// Editor utilities must work even in an environment without a WASM engine.
 const wasm = Reflect.get(globalThis, 'WebAssembly');
 Reflect.set(globalThis, 'WebAssembly', undefined);
-const { tokenTypes, tokenModifiers, replacement } = await import('kotlin-parser/shared');
+const { tokenTypes, tokenModifiers, replacement } = await import('kotlin-parser/editor');
 strictEqual(tokenTypes.length, 19);
 deepStrictEqual(replacement('val x = 1', 'val x = 2'), { start: 8, end: 9, text: '2' });
 Reflect.set(globalThis, 'WebAssembly', wasm);
@@ -11,13 +11,9 @@ const firstLoad = import('kotlin-parser/wasm');
 strictEqual(firstLoad instanceof Promise, true);
 const [parser, repeated] = await Promise.all([firstLoad, import('kotlin-parser/wasm')]);
 strictEqual(parser, repeated);
-const combined = await import('kotlin-parser');
-strictEqual(combined.parseFile, parser.parseFile);
-strictEqual(combined.tokenTypes, tokenTypes);
-strictEqual(combined.replacement, replacement);
 strictEqual(typeof parser.parseFile('val x = 1'), 'string');
 const { tokenize, parseFile, parseScript } = parser;
-console.log('Shared entry imports without WASM; the WASM subpath shares the module and parsing stays synchronous');
+console.log('Editor entry imports without WASM; the WASM subpath shares the module and parsing stays synchronous');
 const fixtures = JSON.parse(await readFile(new URL('../build/oracle/lexer.json', import.meta.url), 'utf8'));
 for (const { source, tokens } of fixtures) deepStrictEqual(JSON.parse(tokenize(source)), tokens, JSON.stringify(source));
 console.log(`WASM package matches ${fixtures.length} JVM-verified official lexer fixtures`);

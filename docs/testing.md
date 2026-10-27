@@ -15,6 +15,12 @@ pnpm test:extension
 
 ## Focused validation
 
+Formatting checks and upstream upgrade steps are described in [Kotlin formatting](formatting.md). `pnpm test:built` includes formatter JVM/WASM tests and packaged WASM replay of ktfmt-generated fixtures. Extension Worker tests cover formatting, malformed input, cancellation and disposal; the real extension-host suite checks `.kt` and `.kts` Format Document edits.
+
+Formatter cache tests count messages to a real Worker: repeated inputs and shared pending requests avoid additional calls, while source/style/width/script changes and document reopening require computation. Tests also cover independent cancellation, errors, Worker restart, close/disposal, latest-request selection, and a real ktfmt example whose second pass changes the output.
+
+`pnpm --filter kotlin-format test:cli` runs the built Node CLI against temporary projects: stdin and scripts, write/check exit codes, nested gitignore, native JSON/JS/MJS/TS discovery and overrides, module reloads and relative imports, invalid input, standalone distribution loading, and upstream non-idempotence. It is included in `test:built`. The formatter owns `kotlin-format/tsconfig.json`; its typecheck is included in the root command. Installed-editor tests also verify module configuration, native TS loading and cache invalidation after configuration edits.
+
 | Change | Validation |
 |---|---|
 | Lexer, builder, grammar or incremental parsing | `pnpm test` |
@@ -36,7 +42,7 @@ Extension-host tests now create a unique portable-data directory for every invoc
 
 ## Generated files and CI
 
-`pnpm generate` deterministically regenerates the common Kotlin lexer tables/actions from the checksum-verified source in `kotlin-parser/upstream`. Before writing outputs, it verifies the lexer and every parser source listed in `metadata.json`; the generated attribution header uses the metadata version. Generated Kotlin sources are committed so ordinary Gradle builds do not require Node to generate sources first.
+`pnpm generate` deterministically regenerates the common Kotlin lexer tables/actions from the checksum-verified cache under root `build/upstream/parser/<commit>/sources/`. It automatically downloads missing sources pinned by `kotlin-parser/upstream/metadata.json` and verifies their hashes before writing outputs; the generated attribution header uses the metadata version. Generated Kotlin sources are committed, so ordinary production builds do not download upstream sources or generate the lexer first. See [upstream synchronization](upstream-sources.md) for prefetching and offline cache use.
 
 The [CI workflow](../.github/workflows/ci.yml) runs on branch pushes and pull requests on ubuntu-latest, while the separate [release workflow](../.github/workflows/release.yml) runs independently on version tags. It checks that lexer regeneration leaves no diff, builds once, typechecks and runs `pnpm test:built`. The release job packages the VSIX with vsce and attaches it directly to GitHub Releases. Tag/version validation and publishing run only for `v*` tags; branch and PR runs need no publishing credentials. It currently does not run the installed-editor host test or enforce performance thresholds.
 
@@ -54,7 +60,15 @@ Worker fault tests cover startup failure, exit, timeouts with queued work, the c
 
 ## Releases
 
-Update `kotlin-vscode/package.json` before tagging. Push a tag matching `v<version>` (for example `v0.0.2`); mismatched tags fail validation. `.github/workflows/release.yml` runs only on `v*` tag pushes. Its single release job validates the tag and runs generation checks, build, typechecking and JVM/WASM/Worker tests on ubuntu-latest. After these checks pass, the same job packages the VSIX as `kotlin-syntax-<version>.vsix` (for example `kotlin-syntax-0.0.2.vsix`), attaches the local file directly to a GitHub Release. Test reports are uploaded even on failures. Marketplace publication is a separate manual upload. The workflow uses the repository's `GITHUB_TOKEN` with write permission in the release job. Installed-editor host tests remain a local validation step.
+Update `kotlin-vscode/package.json`, `kotlin-format/package.json` and `kotlin-parser/package.json` to the same version before tagging. Push `v<version>` (for example `v0.0.7`). `scripts/release-version.ts` rejects mismatched package versions, mismatched tags and private formatter/parser packages. The existing `.github/workflows/release.yml` builds and tests the workspace, packages the VSIX and runs `pnpm pack` for the formatter. The packed manifest is checked for unresolved catalog/workspace references, and its CLI is tested after extraction without workspace dependencies.
+
+The workflow publishes from the formatter package with `pnpm -F kotlin-format publish --no-git-checks`, then attaches only `kotlin-syntax-<version>.vsix` to the GitHub Release. The formatter is distributed through npm; the separate pack step only validates its archive before publication. pnpm resolves catalog references during both packing and publishing. Plugin dependencies are declared at the workspace root. CI and release package directly from `kotlin-vscode` with `--no-dependencies --changelog-path dist/CHANGELOG.md`; only Dev packaging uses a staging directory to change the extension identity. The parser is also published with `pnpm -F kotlin-parser publish --no-git-checks` before the formatter. Test reports are uploaded even on failure. Marketplace upload remains manual.
+
+Publishing uses pnpm 12's native OIDC support with the release job's `id-token: write`; no npm CLI or long-lived token secret is used. Configure both npm packages' GitHub Trusted Publishers with owner `lisonge`, repository `kotlin-syntax`, workflow filename `release.yml`, and permission to publish directly. No GitHub environment is configured by this workflow. The npm package/account and trusted-publisher relationship must be set up externally before running the release; local tests cannot verify registry ownership or OIDC authentication. See [npm trusted publisher setup](https://docs.npmjs.com/trusted-publishers/) and [pnpm OIDC support](https://pnpm.io/blog/releases/12.15.0). GitHub Release uses the automatic `GITHUB_TOKEN`.
+
+The workflow uses `--no-git-checks` because publication runs from a tag checkout. npm-registry publication and GitHub publication are separate operations: if pnpm publishes successfully but the later GitHub Release step fails, recover the GitHub Release using the already published version rather than republishing it.
+
+Local release checks (after building): `node --test scripts/test/release-version.ts`, `RELEASE_TAG=v<version> node scripts/release-version.ts`, `pnpm --filter kotlin-format pack --pack-destination build`, and `node scripts/test-format-package.ts`. These commands do not publish anything.
 
 ### Manual Marketplace upload
 
@@ -66,7 +80,7 @@ Pushing a matching version tag creates a GitHub Release; it does not publish to 
 
 ### Release notes
 
-`kotlin-vscode/CHANGELOG.md` contains only the current release, headed `# What's Changed` and `## <package version>`. Replace the previous version's entries when preparing a release. Tag validation checks that the release tag matches the extension package version. The file is included in the shared VSIX; the release job uses the changelog checked out from the same release tag as its release notes. Marketplace receives the same changelog inside the VSIX package.
+`CHANGELOG.md` contains only the current release, headed `# What's Changed` and `## <package version>`. Replace the previous version's entries when preparing a release. Tag validation checks that the release tag matches the extension, formatter and parser package versions. The file is included in the shared VSIX; the release job uses the changelog checked out from the same release tag as its release notes. Marketplace receives the same changelog inside the VSIX package.
 
 ### First-publication status
 

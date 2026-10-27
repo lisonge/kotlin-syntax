@@ -5,6 +5,8 @@ import assert from 'node:assert/strict';
 import { cases, typing } from './highlight-cases.ts';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import { tmpdir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 import { testWorkspaceDefinitions } from './workspace-definitions.ts';
 export async function run() {
   const manifest = JSON.parse(await fs.readFile(process.env.VSCODE_TEST_MANIFEST ?? path.join(import.meta.dirname, '../package.json'), 'utf8'));
@@ -39,6 +41,23 @@ export async function run() {
     return;
   }
   const legend = await vscode.commands.executeCommand<VSCode.SemanticTokensLegend>('vscode.provideDocumentSemanticTokensLegend', document.uri);
+  for (const script of [false, true]) {
+    const uri = vscode.Uri.parse(`untitled:formatter-test.${script ? 'kts' : 'kt'}`);
+    const doc = await vscode.workspace.openTextDocument(uri);
+    const edit = new vscode.WorkspaceEdit();
+    edit.insert(uri, new vscode.Position(0, 0), script ? 'println(1+2)' : 'fun f(){println("😀")}');
+    assert.ok(await vscode.workspace.applyEdit(edit));
+    const edits = await vscode.commands.executeCommand<VSCode.TextEdit[]>('vscode.executeFormatDocumentProvider', uri, { tabSize: 4, insertSpaces: true });
+    assert.ok(edits?.length, 'Formatting edits returned');
+    const formatted = new vscode.WorkspaceEdit(); formatted.set(uri, edits);
+    assert.ok(await vscode.workspace.applyEdit(formatted));
+    const expected = script ? 'println(1 + 2)\n' : 'fun f() {\n    println("😀")\n}\n';
+    assert.equal(doc.getText(), expected.replaceAll('\n', doc.eol === vscode.EndOfLine.CRLF ? '\r\n' : '\n'));
+    const again = await vscode.commands.executeCommand<VSCode.TextEdit[]>('vscode.executeFormatDocumentProvider', uri, { tabSize: 4, insertSpaces: true });
+    assert.equal(again?.length ?? 0, 0, 'Formatted documents need no edits');
+    const cached = await vscode.commands.executeCommand<VSCode.TextEdit[]>('vscode.executeFormatDocumentProvider', uri, { tabSize: 4, insertSpaces: true });
+    assert.equal(cached?.length ?? 0, 0, 'Cached stable documents need no edits');
+  }
   assert.ok(legend);
   assert.ok(legend.tokenTypes.includes('function'));
   async function tokens(doc: VSCode.TextDocument): Promise<{ text: string; type: string; modifiers: number }[]> {
@@ -151,7 +170,42 @@ export async function run() {
     assert.equal(doc.getText(restarted[0].targetSelectionRange), 'Account');
   }
   await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+  const formatDir = await fs.mkdtemp(path.join(tmpdir(), 'kotlin-format-host-'));
+  try {
+    await fs.writeFile(path.join(formatDir, 'package.json'), '{}');
+    const configPath = path.join(formatDir, 'kotlin-format.config.mjs');
+    await fs.writeFile(configPath, 'export default { // shared CLI/editor configuration\n style:"GOOGLE", removeUnusedImports:false, };');
+    const formatPath = path.join(formatDir, 'sample.kt');
+    await fs.writeFile(formatPath, 'import unused.Foo\nfun f(){println(1)}');
+    const doc = await vscode.workspace.openTextDocument(formatPath);
+    const request = () => vscode.commands.executeCommand<VSCode.TextEdit[]>('vscode.executeFormatDocumentProvider', doc.uri, { tabSize: 4, insertSpaces: true });
+    const preview = (edits: VSCode.TextEdit[] | undefined) => {
+      let text = doc.getText();
+      for (const edit of [...edits ?? []].sort((a, b) => doc.offsetAt(b.range.start) - doc.offsetAt(a.range.start))) {
+        text = text.slice(0, doc.offsetAt(edit.range.start)) + edit.newText + text.slice(doc.offsetAt(edit.range.end));
+      }
+      return text.replaceAll('\r\n', '\n');
+    };
+    const edits = await request();
+    assert.equal(preview(edits), 'import unused.Foo\n\nfun f() {\n  println(1)\n}\n');
+    await fs.writeFile(configPath, 'export default {style:"KOTLINLANG", removeUnusedImports:true};');
+    const changed = await request();
+    assert.equal(preview(changed), 'fun f() {\n    println(1)\n}\n', 'config edits invalidate cached formatting');
+    await fs.rm(configPath);
+    await fs.writeFile(path.join(formatDir, 'package.json'), '{"type":"module"}');
+    await fs.writeFile(path.join(formatDir, 'kotlin-format.config.ts'), 'const style: string = "GOOGLE"; export default { style };');
+    assert.equal(preview(await request()), 'fun f() {\n  println(1)\n}\n', 'native TypeScript configuration in extension host');
+    const { loadConfig } = await import(pathToFileURL(path.join(extension.extensionPath, 'dist/format/config.mjs')).href);
+    const commonjs = path.join(formatDir, 'commonjs');
+    await fs.mkdir(commonjs);
+    await fs.writeFile(path.join(commonjs, 'package.json'), '{"type":"commonjs"}');
+    await fs.writeFile(path.join(commonjs, 'kotlin-format.config.js'), 'module.exports = {maxWidth:80};');
+    await assert.rejects(loadConfig(path.join(commonjs, 'a.kt')), /CommonJS configuration is not supported/);
+  } finally {
+    await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+    await fs.rm(formatDir, { recursive: true, force: true });
+  }
   if (process.env.VSCODE_TEST_WORKSPACE) await testWorkspaceDefinitions(process.env.VSCODE_TEST_WORKSPACE);
-  await fs.writeFile(path.join(import.meta.dirname, '../build/host-result.json'), JSON.stringify({ passed: true, installed: !!process.env.VSCODE_EXPECT_INSTALLED, vscode: vscode.version, assertions: ['activation', 'WASM loading', 'classification', 'multiline ranges', 'incremental edit', 'multiple edits', 'Unicode', 'script', 'burst updates', 'independent classifications', 'malformed kt/kts', 'typing and recovery', 'external disk reload', 'restart resynchronization', 'local and import definitions', 'definition edits and restart', 'concurrent highlights and definitions'] }, null, 2));
+  await fs.writeFile(path.join(import.meta.dirname, '../build/host-result.json'), JSON.stringify({ passed: true, installed: !!process.env.VSCODE_EXPECT_INSTALLED, vscode: vscode.version, assertions: ['activation', 'WASM loading', 'classification', 'multiline ranges', 'incremental edit', 'multiple edits', 'Unicode', 'script', 'burst updates', 'independent classifications', 'malformed kt/kts', 'typing and recovery', 'external disk reload', 'restart resynchronization', 'local and import definitions', 'definition edits and restart', 'concurrent highlights and definitions', 'kt/kts formatting', 'formatting idempotency'] }, null, 2));
 }
 

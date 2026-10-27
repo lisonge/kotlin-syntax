@@ -4,8 +4,11 @@
 !dist/**/*.js
 !dist/**/*.mjs
 !dist/**/*.wasm
+!dist/format/LICENSE
+!dist/format/NOTICE
 !README.md
 !CHANGELOG.md
+!dist/CHANGELOG.md
 !media/icon.png
 !LICENSE
 !LICENSE.txt

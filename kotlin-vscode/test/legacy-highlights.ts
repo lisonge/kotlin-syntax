@@ -1,4 +1,4 @@
-import { tokenTypes } from '../../kotlin-parser/dist/index.js';
+import { tokenTypes } from 'kotlin-parser/editor';
 export interface Node { kind: string; start: number; end: number; children: Node[]; error: string | null }
 export interface Highlight { start: number; end: number; type: number; modifiers: number }
 export function highlights(tree: Node): Highlight[] {

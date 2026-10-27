@@ -19,6 +19,7 @@ Kotlin Syntax is a Kotlin Multiplatform library for parsing and classifying Kotl
 | Highlighting and document updates | Yes, in a background Worker | Yes, in a background Worker |
 | Same-file definition navigation | Yes | Yes |
 | Workspace source navigation | Yes, on demand | No |
+| ktfmt-compatible document formatting | Yes, in a separate Worker | No |
 
 The project does not provide compiler-level type checking, complete type inference or Gradle dependency resolution. See [compatibility and limitations](docs/compatibility.md) for the tested syntax target and supported analysis. The [extension guide](kotlin-vscode/README.md) explains installation, highlighting rules and navigation behavior.
 
@@ -27,17 +28,20 @@ The project does not provide compiler-level type checking, complete type inferen
 | Module | Purpose |
 | --- | --- |
 | [kotlin-parser](kotlin-parser/) | Portable parser, syntax trees, incremental documents, classifications and single-file navigation |
+| [kotlin-format](kotlin-format/) | Portable ktfmt 0.65 formatting with the google-java-format 1.23.0 layout engine |
 | [kotlin-vscode](kotlin-vscode/) | VS Code highlighting and definition navigation using the parser in a Worker |
 | [kotlin-website](kotlin-website/) | Interactive playground using the same parser |
 
 ## Documentation
 
 - [Kotlin and Android integration](docs/kotlin-api.md)
+- [Formatting API and upstream alignment](docs/formatting.md)
 - [Local development and builds](docs/development.md)
 - [Architecture](docs/architecture.md)
 - [Compatibility and limitations](docs/compatibility.md)
 - [Testing and releases](docs/testing.md)
 - [Upstream upgrades](docs/upstream-upgrade.md)
+- [Upstream source synchronization and attribution](docs/upstream-sources.md)
 - [Benchmarks](benchmarks/README.md)
 
 ## License

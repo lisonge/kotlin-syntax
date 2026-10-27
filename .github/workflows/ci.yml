@@ -22,9 +22,7 @@ jobs:
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v6
       - name: Check generated lexer
-        run: pnpm generate
-      - name: Verify generated lexer is unchanged
-        run: git diff --exit-code -- kotlin-parser/src/commonMain/kotlin/li/songe/kotlin/lexer
+        run: pnpm generate:check
       - run: pnpm build
       - run: pnpm typecheck
       - run: pnpm test:built
@@ -41,7 +39,7 @@ jobs:
         working-directory: kotlin-vscode
         env:
           KOTLIN_VSCODE_SKIP_BUILD: '1'
-        run: pnpm dlx @vscode/vsce@4.0.0 package --no-dependencies --out kotlin-syntax.vsix
+        run: pnpm dlx @vscode/vsce@4.0.0 package --no-dependencies --changelog-path dist/CHANGELOG.md --out kotlin-syntax.vsix
       - name: Upload VSIX
         uses: actions/upload-artifact@v7
         with:
@@ -53,5 +51,8 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: test-reports-ubuntu-latest
-          path: kotlin-parser/build/reports/tests/
+          path: |
+            kotlin-parser/build/reports/tests/
+            kotlin-format/build/reports/tests/
+            kotlin-format/build/oracle/failures.txt
           if-no-files-found: warn

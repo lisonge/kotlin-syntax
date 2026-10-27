@@ -1,4 +1,4 @@
-import { replacement } from '../../kotlin-parser/dist/index.js';
+import { replacement } from 'kotlin-parser/editor';
 import type { Node } from './legacy-highlights.ts';
 import type { Worker } from 'node:worker_threads';
 import { test } from 'node:test';
@@ -194,7 +194,7 @@ test('worker failure rejects work and the next request starts a fresh worker', a
 
 test('independent highlighting expectations survive malformed kt/kts and sequential edits', async () => {
   const { cases, typing } = await import('./highlight-cases.ts');
-  const { tokenTypes } = await import('../../kotlin-parser/dist/index.js');
+  const { tokenTypes } = await import('kotlin-parser/editor');
   const client = new ParserClient();
   function decode(source: string, data: Uint32Array) {
     const lines = source.split(/\r\n|\r|\n/);

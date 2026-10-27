@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { tokenModifiers, tokenTypes } from 'kotlin-parser/shared';
+import { tokenModifiers, tokenTypes } from 'kotlin-parser/editor';
 import { tokenStyle } from './token-theme.ts';
 import { KotlinEditor } from './editor.tsx';
 import './tailwind.css';

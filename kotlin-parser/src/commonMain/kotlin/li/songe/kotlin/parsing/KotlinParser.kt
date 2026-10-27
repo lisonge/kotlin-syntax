@@ -744,7 +744,7 @@ private class DeclarationParser(source: String) {
             if (!any(expressionFirst + top + modifiers)) errorAdvance("Expecting an element")
             if (any(expressionFirst + top + modifiers)) {
                 if (!localDeclaration(script)) {
-                    if (script) { val init = mark(); expression(); init.done("SCRIPT_INITIALIZER") } else expression()
+                    if (script) { val init = mark(); blockLevelExpression(); init.done("SCRIPT_INITIALIZER") } else blockLevelExpression()
                 }
             }
             if (b.currentOffset == offset && !eof() && !at("RBRACE")) errorAdvance("Expecting a statement")
@@ -755,6 +755,21 @@ private class DeclarationParser(source: String) {
                 else errorUntil(message, setOf("EOL", "LBRACE", "RBRACE"))
             }
         }
+    }
+    private fun blockLevelExpression() {
+        if (at("AT")) {
+            val annotated = mark()
+            annotations()
+            if (!s.newlineBeforeCurrentToken()) {
+                annotated.rollbackTo()
+                expression()
+                return
+            }
+            blockLevelExpression()
+            annotated.done("ANNOTATED_EXPRESSION")
+            return
+        }
+        expression()
     }
     private fun errorUntil(message: String, recovery: Set<String>) {
         val m = mark(); while (!eof() && !any(recovery)) advance(); m.error(message)

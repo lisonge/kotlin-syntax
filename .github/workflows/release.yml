@@ -4,7 +4,8 @@ on:
     tags:
       - 'v*'
 permissions:
-  contents: read
+  contents: write
+  id-token: write
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
@@ -12,8 +13,6 @@ jobs:
   release:
     timeout-minutes: 30
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/setup@v3
@@ -21,35 +20,46 @@ jobs:
         run: node scripts/release-version.ts
         env:
           RELEASE_TAG: ${{ github.ref_name }}
+      - name: Test release version validation
+        run: node --test scripts/test/release-version.ts
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v6
       - name: Check generated lexer
-        run: pnpm generate
-      - name: Verify generated lexer is unchanged
-        run: git diff --exit-code -- kotlin-parser/src/commonMain/kotlin/li/songe/kotlin/lexer
+        run: pnpm generate:check
       - run: pnpm build
       - run: pnpm typecheck
       - run: pnpm test:built
+      - name: Package formatter
+        run: pnpm --filter kotlin-format pack --pack-destination build
+      - name: Verify formatter archive
+        run: node scripts/test-format-package.ts
       - name: Package VSIX
         working-directory: kotlin-vscode
         env:
           KOTLIN_VSCODE_SKIP_BUILD: '1'
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          pnpm dlx @vscode/vsce@4.0.0 package --no-dependencies --out kotlin-syntax.vsix
-          mv kotlin-syntax.vsix "kotlin-syntax-${RELEASE_TAG#v}.vsix"
+          pnpm dlx @vscode/vsce@4 package --no-dependencies --changelog-path dist/CHANGELOG.md --out "kotlin-syntax-${RELEASE_TAG#v}.vsix"
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: test-reports-ubuntu-latest
-          path: kotlin-parser/build/reports/tests/
+          path: |
+            kotlin-parser/build/reports/tests/
+            kotlin-format/build/reports/tests/
+            kotlin-format/build/oracle/failures.txt
           if-no-files-found: warn
+      - name: Publish parser to npm
+        run: pnpm -F kotlin-parser publish --no-git-checks
+      - name: Publish formatter to npm
+        run: pnpm -F kotlin-format publish --no-git-checks
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v3
         with:
           files: kotlin-vscode/kotlin-syntax-*.vsix
-          body_path: kotlin-vscode/CHANGELOG.md
+          fail_on_unmatched_files: true
+          body_path: CHANGELOG.md

@@ -12,10 +12,10 @@
   },
   "dependencies": {
     "kotlin-parser": "workspace:*",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "@codemirror/state": "^6.5.2",
-    "@codemirror/view": "^6.38.0",
-    "@codemirror/commands": "^6.8.1"
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "@codemirror/state": "catalog:",
+    "@codemirror/view": "catalog:",
+    "@codemirror/commands": "catalog:"
   }
 }

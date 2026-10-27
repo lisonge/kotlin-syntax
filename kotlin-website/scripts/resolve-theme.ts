@@ -1,5 +1,5 @@
 import themeData from '../vendor/one-dark-pro/theme.json' with { type: 'json' };
-import { tokenModifiers } from 'kotlin-parser/shared';
+import { tokenModifiers } from 'kotlin-parser/editor';
 
 interface Settings { foreground?: string; fontStyle?: string; bold?: boolean; italic?: boolean; underline?: boolean; strikethrough?: boolean }
 interface Theme { colors: Record<string, string>; tokenColors: { scope?: string | string[]; settings: Settings }[]; semanticTokenColors: Record<string, string | Settings> }

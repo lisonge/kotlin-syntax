@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { tokenStyle as resolveStyle } from '../scripts/resolve-theme.ts';
 import { tokenClass, tokenStyle, tokenRules } from '../src/token-theme.ts';
-import { tokenTypes, tokenModifiers } from 'kotlin-parser/shared';
+import { tokenTypes, tokenModifiers } from 'kotlin-parser/editor';
 
 test('One Dark Pro semantic overrides and VS Code scope fallbacks', () => {
   // Independent expectations from the pinned official theme and VS Code probes.

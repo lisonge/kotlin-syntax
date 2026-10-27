@@ -25,5 +25,12 @@
       "path": "compiler/psi/parser/src/org/jetbrains/kotlin/parsing/SemanticWhitespaceAwarePsiBuilderImpl.java",
       "sha256": "f85f19b2b089e2129de20c19c18d124f074bae98c404b3915a477d2bb8375fa5"
     }
-  ]
+  ],
+  "referenceSources": [
+    {
+      "path": "compiler/psi/parser/src/org/jetbrains/kotlin/lexer/Kotlin.flex",
+      "sha256": "523f43d01279c4dd04fc8e3c6cce8a6fc861ce4d337167dac154a0010ac872e8"
+    }
+  ],
+  "checksum": "SHA-256 of UTF-8 text with CRLF normalized to LF"
 }

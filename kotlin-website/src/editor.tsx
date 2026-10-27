@@ -3,7 +3,7 @@ import { type ChangeSet, EditorState, StateEffect, StateField } from '@codemirro
 import { Decoration, EditorView, drawSelection, highlightActiveLine, highlightActiveLineGutter, keymap, lineNumbers } from '@codemirror/view';
 import type { DecorationSet } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
-import { tokenTypes } from 'kotlin-parser/shared';
+import { tokenTypes } from 'kotlin-parser/editor';
 import type { Edit, Request, Result } from './protocol.ts';
 import { oneDarkPro } from './theme.ts';
 import { tokenClass } from './token-theme.ts';

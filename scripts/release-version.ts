@@ -1,7 +1,17 @@
 import { readFileSync } from 'node:fs';
-const { version } = JSON.parse(readFileSync(new URL('../kotlin-vscode/package.json', import.meta.url), 'utf8'));
-const tag = process.env.RELEASE_TAG;
-if (!/^\d+\.\d+\.\d+$/.test(version) || tag !== `v${version}`) {
-  throw new Error(`Release tag must match extension version: expected v${version}, received ${tag}`);
+
+export function validateReleaseVersions(extension: string, formatter: string, parser: string, tag: string | undefined): void {
+  if (!/^\d+\.\d+\.\d+$/.test(extension) || formatter !== extension || parser !== extension || tag !== `v${extension}`) {
+    throw new Error(`Release versions must match: extension=${extension}, formatter=${formatter}, parser=${parser}, tag=${tag}; expected all packages at ${extension} and tag v${extension}`);
+  }
 }
-console.log(`Validated release ${tag}`);
+
+if (import.meta.main) {
+  const extension = JSON.parse(readFileSync(new URL('../kotlin-vscode/package.json', import.meta.url), 'utf8'));
+  const formatter = JSON.parse(readFileSync(new URL('../kotlin-format/package.json', import.meta.url), 'utf8'));
+  const parser = JSON.parse(readFileSync(new URL('../kotlin-parser/package.json', import.meta.url), 'utf8'));
+  validateReleaseVersions(extension.version, formatter.version, parser.version, process.env.RELEASE_TAG);
+  if (formatter.private) throw new Error('kotlin-format must not be private for npm publishing');
+  if (parser.private) throw new Error('kotlin-parser must not be private for npm publishing');
+  console.log(`Validated release v${extension.version} for VSIX, kotlin-format and kotlin-parser`);
+}

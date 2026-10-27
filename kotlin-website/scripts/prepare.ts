@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 
 const { theme, tokenStyle } = await import('./resolve-theme.ts');
-const { tokenTypes, tokenModifiers } = await import('kotlin-parser/shared');
+const { tokenTypes, tokenModifiers } = await import('kotlin-parser/editor');
 const styles: ReturnType<typeof tokenStyle>[] = [];
 const tokens = Object.fromEntries(tokenTypes.map(type => [type, Array.from({ length: 1 << tokenModifiers.length }, (_, bits) => {
   const style = tokenStyle(type, bits);

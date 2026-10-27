@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { highlights } from './legacy-highlights.ts';
-import { tokenTypes } from '../../kotlin-parser/dist/index.js';
+import { tokenTypes } from 'kotlin-parser/editor';
 import { tokenDelta } from '../dist/highlights.js';
 import * as parser from '../dist/parser/kotlin-parser.mjs';
 test('semantic token deltas reconstruct every update', () => {

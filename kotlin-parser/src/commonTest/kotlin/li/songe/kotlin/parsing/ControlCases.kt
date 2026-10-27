@@ -2,6 +2,7 @@ package li.songe.kotlin.parsing
 
 object ControlCases {
     val bodies = listOf(
+        "@Suppress(\"D\")\na + b", "@A a + b", "@A\n@B\na() && b()",
         "val x = 1\nvar y = x + 2\ny += 1\nreturn y",
         "val (a, b) = pair\nval [c, d] = pair", "(val a, var b) = pair", "val (a: Int, b: Int) = pair",
         "if (x) foo() else bar()", "if (x) { return 1 } else { return 2 }", "if (x) if (y) a else b",

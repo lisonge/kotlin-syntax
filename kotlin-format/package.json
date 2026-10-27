@@ -1,0 +1,46 @@
+{
+  "name": "kotlin-format",
+  "version": "0.0.8",
+  "description": "Kotlin formatter aligned with ktfmt, powered by WebAssembly with a Node.js CLI.",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "type": "module",
+  "bin": {
+    "kotlin-format": "./dist/cli.mjs"
+  },
+  "exports": {
+    "./config": {
+      "types": "./dist/config.d.mts",
+      "import": "./dist/config.mjs"
+    },
+    "./wasm": {
+      "types": "./dist/kotlin-format.d.mts",
+      "import": "./dist/kotlin-format.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "node scripts/build.ts",
+    "prepare:upstream": "node scripts/prepare-upstream.ts",
+    "test:bundle": "node scripts/test-bundle.ts",
+    "test:cli": "node --test test/*.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lisonge/kotlin-syntax.git",
+    "directory": "kotlin-format"
+  },
+  "homepage": "https://github.com/lisonge/kotlin-syntax#readme",
+  "bugs": {
+    "url": "https://github.com/lisonge/kotlin-syntax/issues"
+  },
+  "dependencies": {
+    "ignore": "catalog:"
+  }
+}

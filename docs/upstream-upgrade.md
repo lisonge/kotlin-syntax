@@ -5,15 +5,15 @@ This is the manual procedure for changing the official syntax reference. Updatin
 ## Source and dependency pins
 
 - [kotlin-parser/upstream/metadata.json](../kotlin-parser/upstream/metadata.json): repository, commit, lexer path/checksum and parser source paths/checksums.
-- `kotlin-parser/upstream/_JetLexer.java` and `kotlin-parser/upstream/parsing/`: vendored reference sources.
+- `build/upstream/parser/<commit>/sources/`: downloaded reference sources; original repository-relative paths are preserved.
 - [gradle/libs.versions.toml](../gradle/libs.versions.toml): Kotlin plugin, test library and compiler oracle version.
 - `kotlin-parser/scripts/generate-lexer.ts`: lexer translation and generation.
 - `kotlin-parser/src/commonMain/kotlin/li/songe/kotlin/`: portable implementation.
 
 ## Upgrade sequence
 
-1. Select an official release and its exact source commit. Compare the recorded upstream parser, lexer, whitespace builder and comment binders against that commit. Review licensing and source attribution when replacing vendored files.
-2. Update the vendored sources and their metadata/checksums together. Run `pnpm generate` to verify both the lexer checksum and every parser source checksum recorded in `metadata.json`. Align the compiler oracle and Kotlin plugin pins with the chosen release.
+1. Select an official release and its exact source commit. Compare the recorded upstream parser, lexer, whitespace builder and comment binders against that commit. Review licensing and source attribution when changing the reference.
+2. Update source paths, the commit and checksums in `metadata.json` together (UTF-8 text with CRLF normalized to LF). Run `pnpm upstream:sync parser` to fetch and verify the selected files, or let `pnpm generate` do this automatically. Align the compiler oracle and Kotlin plugin pins with the chosen release. See [source synchronization](upstream-sources.md); original reference files are no longer checked in.
 3. Review `generate-lexer.ts` before running `pnpm generate`. Its generated header reads the metadata version, while its expected action count remains release-specific; inspect and update these when upstream changes. Unsupported action syntax must be translated rather than bypassing its validation. Inspect `LexerTables.kt` and `LexerActions.kt` regeneration.
 4. Port grammar, token, builder, trivia and error-recovery changes into common Kotlin. Preserve the correspondence with the official parsing flow. Adapt the JVM oracle only where the official APIs changed, and add valid, malformed, script and incremental-edit cases for new behavior.
 5. Run the commands in [testing.md](testing.md). Confirm JVM oracle comparisons, packaged WASM fixture replay, compact-highlight equivalence and real extension-host behavior. Generate oracle fixtures from the new official compiler rather than accepting portable-parser output as the expected result.

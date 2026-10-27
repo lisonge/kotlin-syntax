@@ -1,14 +1,14 @@
 {
   "name": "kotlin-vscode",
   "displayName": "Kotlin Syntax",
-  "description": "Parser-powered Kotlin syntax highlighting for .kt and .kts files. No JVM language server or Gradle import required.",
+  "description": "Kotlin syntax highlighting, navigation and ktfmt-compatible formatting. No JVM runtime required.",
   "icon": "media/icon.png",
   "galleryBanner": {
     "color": "#191c22",
     "theme": "dark"
   },
   "pricing": "Free",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "private": true,
   "type": "module",
   "engines": {
@@ -18,11 +18,7 @@
     "vscode:prepublish": "node scripts/prepublish.ts",
     "build": "node scripts/build.ts",
     "test:host": "node scripts/test-host.ts",
-    "test": "node --test test/bundle.ts test/worker.ts test/name-filter.ts test/workspace-files.ts"
-  },
-  "dependencies": {
-    "ignore": "^7.0.14",
-    "kotlin-parser": "workspace:*"
+    "test": "node --test test/bundle.ts test/worker.ts test/name-filter.ts test/workspace-files.ts test/format.ts"
   },
   "contributes": {
     "languages": [
@@ -52,16 +48,34 @@
         "command": "kotlinSyntax.restartParser",
         "title": "Kotlin Syntax: Restart Parser"
       }
-    ]
-  },
-  "devDependencies": {
-    "@types/vscode": "1.116.0"
+    ],
+    "configuration": {
+      "title": "Kotlin Syntax",
+      "properties": {
+        "kotlinSyntax.format.maxWidth": {
+          "minimum": 1,
+          "maximum": 999,
+          "type": "integer",
+          "scope": "resource",
+          "default": 100,
+          "description": "Preferred maximum line width for Kotlin formatting."
+        },
+        "kotlinSyntax.format.style": {
+          "enum": [
+            "KOTLINLANG",
+            "GOOGLE",
+            "META"
+          ],
+          "type": "string",
+          "default": "KOTLINLANG",
+          "scope": "resource",
+          "description": "ktfmt formatting style (including indentation and trailing comma policy)."
+        }
+      }
+    }
   },
   "publisher": "lisonge",
   "main": "./dist/extension.js",
-  "activationEvents": [
-    "onLanguage:kotlin"
-  ],
   "categories": [
     "Programming Languages"
   ],

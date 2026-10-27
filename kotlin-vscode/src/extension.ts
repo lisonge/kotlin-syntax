@@ -7,9 +7,13 @@ export async function activate(context: VSCode.ExtensionContext): Promise<void> 
     return;
   }
   const { ParserClient } = await import('./parser-client.ts');
+  const { FormatClient } = await import('./format-client.ts');
+  const { loadConfig } = await import('kotlin-format/config');
+  const formatter = new FormatClient();
+  context.subscriptions.push({ dispose() { void formatter.dispose(); } });
   const { WorkspaceDefinitions } = await import('./workspace-definitions.ts');
   const { tokenDelta } = await import('./highlights.ts');
-  const { tokenTypes, tokenModifiers } = await import('kotlin-parser/shared');
+  const { tokenTypes, tokenModifiers } = await import('kotlin-parser/editor');
   const displayName: string = context.extension.packageJSON.displayName;
   const commands: { command: string }[] = context.extension.packageJSON.contributes.commands;
   const showLogsCommand = commands.find(entry => entry.command.endsWith('.showLogs'))!.command;
@@ -49,6 +53,27 @@ export async function activate(context: VSCode.ExtensionContext): Promise<void> 
     } finally { subscription.dispose(); }
   }
   context.subscriptions.push(changed,
+    vscode.languages.registerDocumentFormattingEditProvider({ language: 'kotlin' }, {
+      async provideDocumentFormattingEdits(document, _options, cancellation) {
+        if (cancellation.isCancellationRequested || document.isClosed) return;
+        const version = document.version;
+        const source = document.getText();
+        const config = vscode.workspace.getConfiguration('kotlinSyntax.format', document.uri);
+        const controller = new AbortController();
+        const subscription = cancellation.onCancellationRequested(() => controller.abort());
+        try {
+            const projectConfig = document.uri.scheme === 'file'
+              ? await loadConfig(document.uri.fsPath, { allowCode: vscode.workspace.isTrusted }) : {};
+          const text = await formatter.request({ key: document.uri.toString(), source, script: document.uri.path.endsWith('.kts'),
+              style: config.get('style', 'KOTLINLANG'), maxWidth: config.get('maxWidth', 100), ...projectConfig }, controller.signal);
+          if (text === undefined || text === source || cancellation.isCancellationRequested || document.isClosed || document.version !== version) return [];
+          return [vscode.TextEdit.replace(new vscode.Range(document.positionAt(0), document.positionAt(source.length)), text)];
+        } catch (error) {
+          output.warn(`Formatting failed: ${error instanceof Error ? error.message : String(error)}`);
+          throw error;
+        } finally { subscription.dispose(); }
+      },
+    }),
     vscode.languages.registerDefinitionProvider({ language: 'kotlin' }, {
       async provideDefinition(document, position, cancellation) {
         if (cancellation.isCancellationRequested || document.isClosed) return;
@@ -101,7 +126,7 @@ export async function activate(context: VSCode.ExtensionContext): Promise<void> 
     }),
     vscode.workspace.onDidCloseTextDocument(document => {
       const key = document.uri.toString();
-      client.close(key); previous.delete(key);
+      client.close(key); formatter.close(key); previous.delete(key);
     }),
     { dispose() { workspaceDefinitions.dispose(); void client.dispose(); previous.clear(); } });
 }

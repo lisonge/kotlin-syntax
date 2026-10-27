@@ -7,18 +7,21 @@ Kotlin Syntax centers on a portable Kotlin Multiplatform parser. The VS Code ext
 - `kotlin-parser/src/commonMain`: lexer, marker builder, immutable syntax trees, grammar parsing and incremental documents.
 - `kotlin-parser/src/jvmTest`: official compiler adapters and differential tests. The compiler dependency is limited to this source set.
 - `kotlin-parser/src/wasmJsMain`: exported document, parsing and syntax classification APIs.
-- `kotlin-parser/js`: shared token legend and source replacement calculation, exported from the lightweight `kotlin-parser/shared` entry and copied into the extension package with the parser assets.
+- `kotlin-format/src/commonMain`: ktfmt rules, portable tree views, KDoc formatting and the google-java-format layout engine. `jvmTest` alone depends on the original formatters; JVM and WASM production code use the portable parser.
+- `kotlin-parser/js`: shared token legend and source replacement calculation, exported from the lightweight `kotlin-parser/editor` entry and copied into the extension package with the parser assets.
 - `kotlin-vscode/src`: extension provider, Worker client, Worker runtime and token encoding.
 - `kotlin-website/src`: React playground and browser Worker. Theme preparation resolves the vendored One Dark Pro rules into deduplicated styles before Vite builds the site.
 - `benchmarks`: executable benchmarks and archived reports; see the [benchmark guide](../benchmarks/README.md).
 
 ## Kotlin API
 
+The formatter API and pinned upstream versions are described in [Kotlin formatting](formatting.md). The extension loads its separate WASM formatter Worker on the first formatting request. Formatting uses a complete source snapshot; cancelled or outdated results are discarded before producing editor edits.
+
 `tokenize` returns `List<Token>`; `parseFile` and `parseScript` return `SyntaxNode`. `SyntaxNode.classifySyntax()` returns `List<SyntaxClassification>` with `TokenType` and `Set<TokenModifier>`. `IncrementalDocument` keeps native Kotlin document state. Android and JVM consumers use these objects directly; JSON is only needed at serialization boundaries. See [Kotlin and Android integration](kotlin-api.md).
 
 ## JavaScript entry
 
-`kotlin-parser/shared` exports `tokenTypes`, `tokenModifiers` and `replacement`, built with tsdown. Importing this entry does not load WASM. The root `kotlin-parser` entry re-exports both shared utilities and the WASM API for consumers that do not need a Worker; importing it initializes WASM. The separate `kotlin-parser/wasm` subpath exposes the generated Kotlin module; use a static import or `await import('kotlin-parser/wasm')` for on-demand loading. Parsing/document methods remain synchronous after module initialization. Repeated imports reuse the module in the same JS environment; each Worker has its own instance. The website Worker imports `kotlin-parser/wasm` directly. Vite tracks the generated modules and emits the referenced WASM asset with the Worker build.
+`kotlin-parser/editor` exports `tokenTypes`, `tokenModifiers` and `replacement`, built with tsdown. Importing this entry does not load WASM. There is no root package entry; consumers explicitly select editor utilities or the WASM API. The `kotlin-parser/wasm` subpath exposes the generated Kotlin module; use a static import or `await import('kotlin-parser/wasm')` for on-demand loading. Parsing/document methods remain synchronous after module initialization. Repeated imports reuse the module in the same JS environment; each Worker has its own instance. The website Worker imports `kotlin-parser/wasm` directly. Vite tracks the generated modules and emits the referenced WASM asset with the Worker build.
 
 ## WASM API
 
