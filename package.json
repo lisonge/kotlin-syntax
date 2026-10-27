@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build:dev": "pnpm --filter kotlin-parser --filter kotlin-format build && pnpm --filter kotlin-vscode build && node kotlin-vscode/scripts/package-dev.ts && cd kotlin-vscode/build/dev-extension && pnpm dlx @vscode/vsce@4.0.0 package --no-dependencies --out ../kotlin-syntax-dev.vsix",
+    "build:dev": "pnpm --filter kotlin-parser build && pnpm --filter kotlin-format build && pnpm --filter kotlin-vscode build && node kotlin-vscode/scripts/package-dev.ts && cd kotlin-vscode/build/dev-extension && pnpm dlx @vscode/vsce@4.0.0 package --no-dependencies --out ../kotlin-syntax-dev.vsix",
     "dev:website": "pnpm --filter kotlin-parser build && pnpm --filter kotlin-website dev",
-    "build": "pnpm --filter kotlin-parser --filter kotlin-format build && pnpm --filter kotlin-vscode --filter kotlin-website build",
+    "build": "pnpm --filter kotlin-parser build && pnpm --filter kotlin-format build && pnpm --filter kotlin-vscode --filter kotlin-website build",
     "test": "pnpm build && pnpm test:built",
     "generate": "pnpm --filter kotlin-parser generate",
     "generate:check": "pnpm --filter kotlin-parser generate:check",

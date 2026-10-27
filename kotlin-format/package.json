@@ -1,6 +1,6 @@
 {
   "name": "kotlin-format",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Kotlin formatter aligned with ktfmt, powered by WebAssembly with a Node.js CLI.",
   "publishConfig": {
     "access": "public",
