@@ -8,7 +8,7 @@
     "theme": "dark"
   },
   "pricing": "Free",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "private": true,
   "type": "module",
   "engines": {
@@ -18,7 +18,7 @@
     "vscode:prepublish": "node scripts/prepublish.ts",
     "build": "node scripts/build.ts",
     "test:host": "node scripts/test-host.ts",
-    "test": "node --test test/bundle.ts test/worker.ts test/name-filter.ts test/workspace-files.ts test/format.ts"
+    "test": "node --test test/bundle.ts test/worker.ts test/name-filter.ts test/workspace-files.ts test/expect-actual.ts test/navigation.ts test/format.ts"
   },
   "contributes": {
     "languages": [

@@ -96,6 +96,17 @@ val invalid = Person.name`;
     const result = await vscode.commands.executeCommand<VSCode.LocationLink[]>('vscode.executeDefinitionProvider', memberCaller, memberDoc.positionAt(position));
     assert.equal(result?.length, 0, `Unsupported receiver ${fragment}`);
   }
+  const nestedModel = await write('nested/Model.kt', 'package nested\nclass Box { class Value { fun work() {} }; val value: Value = Value() }');
+  const nestedCaller = await write('nested/Caller.kt', 'package nested\nfun use(box: Box) { box.value.work() }');
+  const nestedDoc = await vscode.workspace.openTextDocument(nestedCaller);
+  for (const unrelated of [false, true]) {
+    if (unrelated) await write('nested/Other.kt', 'package nested\nclass Value { fun work() {} }');
+    const result = await vscode.commands.executeCommand<VSCode.LocationLink[]>('vscode.executeDefinitionProvider', nestedCaller,
+      nestedDoc.positionAt(nestedDoc.getText().lastIndexOf('work')));
+    assert.equal(result?.length, 1, 'Nested receiver survives moving declarations to another file');
+    assert.equal(result[0].targetUri.toString(), nestedModel.toString());
+    assert.equal((await vscode.workspace.openTextDocument(nestedModel)).getText(result[0].targetSelectionRange), 'work');
+  }
   const main = await write('app/src/main/kotlin/com/example/app/Main.kt', 'package com.example.app\nimport com.example.model.User as Account\nfun use(value: Account) = value\n');
   const model = await write('lib/src/main/kotlin/com/example/model/Models.kt', 'package com.example.model\nclass User\n');
   await write('lib/src/main/kotlin/com/example/model/Private.kt', 'package com.example.model\nprivate class User');

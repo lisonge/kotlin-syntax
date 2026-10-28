@@ -8,6 +8,8 @@ export interface FileSymbols {
   declarations: Declaration[];
 }
 export interface Declaration {
+  expectActual?: { role: 'expect' | 'actual'; keyword: [number, number] | null; classifier: string;
+    typeParameters: number; receiver: string[]; parameters: string[][]; contexts: string[][]; suspend: boolean };
   name: string; kind: string; path: string[]; aliases: string[][]; private: boolean; privateScopes?: [number, number][]; static: boolean;
   parameters?: { name: string; start: number; end: number; nameStart: number; nameEnd: number }[];
   typePath: string[]; constructorPath: string[]; extension: boolean;

@@ -51,7 +51,7 @@ if (process.env.VSCODE_TEST_WORKSPACE === '1') {
 }
 const log = createWriteStream(logPath);
 const child = spawn(executable, [
-  '--extensionDevelopmentPath=' + developmentPath, '--extensionTestsPath=' + resolve(root, 'test/host.ts'),
+  '--extensionDevelopmentPath=' + developmentPath, '--extensionTestsPath=' + resolve(root, process.env.VSCODE_TEST_ENTRY ?? 'test/host.ts'),
   '--user-data-dir=' + resolve(profile, 'user-data'), '--extensions-dir=' + resolve(profile, 'extensions'),
   ...(process.env.VSCODE_TEST_STABLE_DISABLED === '1' ? ['--disable-extension=lisonge.kotlin-vscode'] : []),
   ...(vsix ? [] : ['--disable-extensions']), '--skip-welcome', '--skip-release-notes', '--disable-workspace-trust',
@@ -59,7 +59,7 @@ const child = spawn(executable, [
 ], { env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
 child.stdout.pipe(log, { end: false });
 child.stderr.pipe(log, { end: false });
-const timer = setTimeout(() => child.kill(), 120_000);
+const timer = setTimeout(() => child.kill(), Number(process.env.VSCODE_TEST_TIMEOUT_MS ?? 120_000));
 try {
   const status = await new Promise<number | null>((accept, reject) => { child.on('close', accept); child.on('error', reject); });
   if (status !== 0) throw new Error(`VS Code test host exited with ${status}; see ${logPath}`);

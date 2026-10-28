@@ -8,6 +8,7 @@ import * as path from 'node:path';
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { testWorkspaceDefinitions } from './workspace-definitions.ts';
+import { testExpectActual } from './expect-actual-host.ts';
 export async function run() {
   const manifest = JSON.parse(await fs.readFile(process.env.VSCODE_TEST_MANIFEST ?? path.join(import.meta.dirname, '../package.json'), 'utf8'));
   const extension = vscode.extensions.getExtension(`${manifest.publisher}.${manifest.name}`);
@@ -205,7 +206,10 @@ export async function run() {
     await vscode.commands.executeCommand('workbench.action.closeAllEditors');
     await fs.rm(formatDir, { recursive: true, force: true });
   }
-  if (process.env.VSCODE_TEST_WORKSPACE) await testWorkspaceDefinitions(process.env.VSCODE_TEST_WORKSPACE);
+  if (process.env.VSCODE_TEST_WORKSPACE) {
+    await testWorkspaceDefinitions(process.env.VSCODE_TEST_WORKSPACE);
+    await testExpectActual(process.env.VSCODE_TEST_WORKSPACE);
+  }
   await fs.writeFile(path.join(import.meta.dirname, '../build/host-result.json'), JSON.stringify({ passed: true, installed: !!process.env.VSCODE_EXPECT_INSTALLED, vscode: vscode.version, assertions: ['activation', 'WASM loading', 'classification', 'multiline ranges', 'incremental edit', 'multiple edits', 'Unicode', 'script', 'burst updates', 'independent classifications', 'malformed kt/kts', 'typing and recovery', 'external disk reload', 'restart resynchronization', 'local and import definitions', 'definition edits and restart', 'concurrent highlights and definitions', 'kt/kts formatting', 'formatting idempotency'] }, null, 2));
 }
 

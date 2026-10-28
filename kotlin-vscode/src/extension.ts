@@ -52,6 +52,30 @@ export async function activate(context: VSCode.ExtensionContext): Promise<void> 
       return undefined;
     } finally { subscription.dispose(); }
   }
+  async function navigate(document: VSCode.TextDocument, position: VSCode.Position, cancellation: VSCode.CancellationToken, implementation = false) {
+    if (cancellation.isCancellationRequested || document.isClosed) return;
+    const version = document.version;
+    const controller = new AbortController();
+    const subscription = cancellation.onCancellationRequested(() => controller.abort());
+    try {
+      const offset = document.offsetAt(document.getWordRangeAtPosition(position)?.start ?? position);
+      const links: VSCode.DefinitionLink[] = [];
+      if (!implementation) {
+        const data = await client.definitions({ key: document.uri.toString(), version, source: document.getText(), script: document.uri.path.endsWith('.kts') }, offset, controller.signal);
+        if (!data || cancellation.isCancellationRequested || document.isClosed || version !== document.version) return;
+        for (let i = 0; i < data.length; i += 4) {
+          links.push({ targetUri: document.uri,
+            targetRange: new vscode.Range(document.positionAt(data[i]), document.positionAt(data[i + 1])),
+            targetSelectionRange: new vscode.Range(document.positionAt(data[i + 2]), document.positionAt(data[i + 3])) });
+        }
+      }
+      const resolved = await workspaceDefinitions.resolve(document, links, controller.signal, cancellation, offset, implementation);
+      if (cancellation.isCancellationRequested || document.isClosed || version !== document.version) return;
+      return resolved;
+    } catch {
+      return undefined; // Worker failures are reported by the shared client.
+    } finally { subscription.dispose(); }
+  }
   context.subscriptions.push(changed,
     vscode.languages.registerDocumentFormattingEditProvider({ language: 'kotlin' }, {
       async provideDocumentFormattingEdits(document, _options, cancellation) {
@@ -75,28 +99,10 @@ export async function activate(context: VSCode.ExtensionContext): Promise<void> 
       },
     }),
     vscode.languages.registerDefinitionProvider({ language: 'kotlin' }, {
-      async provideDefinition(document, position, cancellation) {
-        if (cancellation.isCancellationRequested || document.isClosed) return;
-        const version = document.version;
-        const controller = new AbortController();
-        const subscription = cancellation.onCancellationRequested(() => controller.abort());
-        try {
-          const offset = document.offsetAt(document.getWordRangeAtPosition(position)?.start ?? position);
-          const data = await client.definitions({ key: document.uri.toString(), version, source: document.getText(), script: document.uri.path.endsWith('.kts') }, offset, controller.signal);
-          if (!data || cancellation.isCancellationRequested || document.isClosed || version !== document.version) return;
-          const links: VSCode.DefinitionLink[] = [];
-          for (let i = 0; i < data.length; i += 4) {
-            links.push({ targetUri: document.uri,
-              targetRange: new vscode.Range(document.positionAt(data[i]), document.positionAt(data[i + 1])),
-              targetSelectionRange: new vscode.Range(document.positionAt(data[i + 2]), document.positionAt(data[i + 3])) });
-          }
-          const resolved = await workspaceDefinitions.resolve(document, links, controller.signal, cancellation, offset);
-          if (cancellation.isCancellationRequested || document.isClosed || version !== document.version) return;
-          return resolved;
-        } catch {
-          return undefined; // Worker failures are reported by the shared client.
-        } finally { subscription.dispose(); }
-      },
+      provideDefinition: (document, position, cancellation) => navigate(document, position, cancellation),
+    }),
+    vscode.languages.registerImplementationProvider({ language: 'kotlin' }, {
+      provideImplementation: (document, position, cancellation) => navigate(document, position, cancellation, true),
     }),
     vscode.commands.registerCommand(showLogsCommand, () => output.show()),
     vscode.commands.registerCommand(restartCommand, () => {

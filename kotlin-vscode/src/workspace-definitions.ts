@@ -1,83 +1,46 @@
 import type * as VSCode from 'vscode';
 import { createRequire } from 'node:module';
-import { createHash } from 'node:crypto';
 import type { ParserClient } from './parser-client.ts';
 import type { FileSymbols } from './protocol.ts';
-import { containsName } from './name-filter.ts';
-import { excludedWorkspaceDirectory, kotlinFiles } from './workspace-files.ts';
-import { accessible, declarationPaths, resolveName, resolveNavigation, uniqueSymbols, type SymbolLocation, type SymbolLookup } from './navigation.ts';
+import { resolveNavigation } from './navigation.ts';
+import { accessible, candidates, uniqueSymbols, type SymbolLocation, type SymbolLookup } from './symbols.ts';
+import { NameResolver } from './type-resolution.ts';
+import { WorkspaceSymbols } from './workspace-symbols.ts';
+import { counterpartAt, counterpartShape, matchesCounterpart, sourceSetLocation } from './expect-actual.ts';
 const vscode: typeof VSCode = createRequire(import.meta.url)('vscode');
 
-/** On-demand lookup of explicit imports and eligible same-package references. Directory enumeration never parses file contents. */
+/** Adapts explicit navigation requests to source lookup, binding, and editor locations. */
 export class WorkspaceDefinitions {
-  private cache = new Map<string, { hash: string; symbols: FileSymbols }>();
-  private roots = new Map<string, { uri: VSCode.Uri; prefix: string[] }>();
-  private serial = 0;
-  private directories: VSCode.Uri[] | undefined;
-  private directoryVersion = 0;
-  private readonly subscriptions: VSCode.Disposable[];
+  private readonly workspace: WorkspaceSymbols;
   private readonly client: Pick<ParserClient, 'symbols' | 'close'>;
-  private readonly fs: Pick<VSCode.FileSystem, 'stat' | 'readDirectory' | 'readFile'>;
-  constructor(client: Pick<ParserClient, 'symbols' | 'close'>, fs: Pick<VSCode.FileSystem, 'stat' | 'readDirectory' | 'readFile'> = vscode.workspace.fs) {
+  constructor(client: Pick<ParserClient, 'symbols' | 'close'>,
+    fs: Pick<VSCode.FileSystem, 'stat' | 'readDirectory' | 'readFile'> = vscode.workspace.fs) {
     this.client = client;
-    this.fs = fs;
-    const watcher = vscode.workspace.createFileSystemWatcher('**/*');
-    const invalidate = () => { this.directories = undefined; this.directoryVersion++; };
-    const relevant = (uri: VSCode.Uri) => {
-      const folder = vscode.workspace.getWorkspaceFolder(uri);
-      if (!folder) return false;
-      const parts = uri.path.slice(folder.uri.path.length + 1).split('/');
-      return !parts.slice(0, -1).some(excludedWorkspaceDirectory) &&
-        (parts.at(-1) === '.gitignore' || parts.at(-1)!.endsWith('.kt') || !excludedWorkspaceDirectory(parts.at(-1)!));
-    };
-    const changed = (uri: VSCode.Uri, deleted: boolean) => {
-      if (!relevant(uri)) return;
-      if (uri.path.endsWith('.kt') || uri.path.endsWith('/.gitignore')) { invalidate(); return; }
-      if (deleted) {
-        if (this.directories?.some(d => d.toString() === uri.toString() || d.toString().startsWith(uri.toString() + '/'))) invalidate();
-      } else void this.fs.stat(uri).then(stat => { if (stat.type === vscode.FileType.Directory) invalidate(); }, () => {});
-    };
-    this.subscriptions = [watcher, watcher.onDidCreate(uri => changed(uri, false)), watcher.onDidDelete(uri => changed(uri, true)),
-      watcher.onDidChange(uri => { if (uri.path.endsWith('/.gitignore') && relevant(uri)) invalidate(); }),
-      vscode.workspace.onDidChangeWorkspaceFolders(() => { this.clear(); })];
+    this.workspace = new WorkspaceSymbols(client, fs);
   }
-  clear() { this.cache.clear(); this.roots.clear(); this.directories = undefined; this.directoryVersion++; }
-  dispose() { this.subscriptions.forEach(item => item.dispose()); this.clear(); }
+  clear() { this.workspace.clear(); }
+  dispose() { this.workspace.dispose(); }
 
-  private rememberRoot(uri: VSCode.Uri, packageName: string[]) {
-    const directory = vscode.Uri.joinPath(uri, '..');
-    const parts = directory.path.split('/');
-    let count = 0;
-    while (count < packageName.length && parts.at(-count - 1) === packageName.at(-count - 1)) count++;
-    const root = directory.with({ path: parts.slice(0, parts.length - count).join('/') || '/' });
-    if (vscode.workspace.getWorkspaceFolder(root)) this.roots.set(root.toString(), { uri: root, prefix: packageName.slice(0, packageName.length - count) });
-  }
-
-  private async summary(uri: VSCode.Uri, source: string, hash: string, signal: AbortSignal): Promise<FileSymbols | undefined> {
-    const cached = this.cache.get(uri.toString());
-    if (cached?.hash === hash) return cached.symbols;
-    const key = `workspace-symbols:${++this.serial}:${uri.toString()}`;
-    try {
-      const json = await this.client.symbols({ key, source, version: 1, script: false }, signal);
-      if (!json || signal.aborted) return;
-      const symbols: FileSymbols = JSON.parse(json);
-      this.cache.delete(uri.toString());
-      this.cache.set(uri.toString(), { hash, symbols });
-      if (this.cache.size > 64) this.cache.delete(this.cache.keys().next().value!);
-      this.rememberRoot(uri, symbols.packageName);
-      return symbols;
-    } finally { this.client.close(key); }
-  }
-
-  async resolve(document: VSCode.TextDocument, links: VSCode.DefinitionLink[], signal: AbortSignal, token: VSCode.CancellationToken, offset?: number): Promise<VSCode.DefinitionLink[]> {
-    if (!vscode.workspace.getWorkspaceFolder(document.uri)) return links;
+  async resolve(document: VSCode.TextDocument, links: VSCode.DefinitionLink[], signal: AbortSignal, token: VSCode.CancellationToken, offset?: number, implementation = false): Promise<VSCode.DefinitionLink[]> {
+    if (signal.aborted || token.isCancellationRequested || !vscode.workspace.getWorkspaceFolder(document.uri)) return links;
     // Local bindings need no metadata request or workspace search.
-    if (links.length && !links.some(link => /^\s*import\b/.test(document.getText(link.targetRange)))) return links;
+    if (links.length && !links.some(link => /^\s*import\b/.test(document.getText(link.targetRange)) ||
+      (offset !== undefined && link.targetSelectionRange?.contains(document.positionAt(offset))))) return links;
     const version = document.version;
     const json = await this.client.symbols({ key: document.uri.toString(), source: document.getText(), version, script: document.uri.path.endsWith('.kts') }, signal, offset);
     if (!json || signal.aborted || document.version !== version) return links;
     const symbols: FileSymbols = JSON.parse(json);
-    this.rememberRoot(document.uri, symbols.packageName);
+    const counterpart = offset === undefined ? undefined : counterpartAt(symbols, offset, implementation);
+    if (implementation && !counterpart) return [];
+    const sourceSet = counterpart && sourceSetLocation(document.uri.path);
+    if (counterpart && !sourceSet) return [];
+    const counterpartFile = (uri: VSCode.Uri, includeSourceSet = false) => {
+      const target = sourceSetLocation(uri.path);
+      return sourceSet && target && uri.scheme === document.uri.scheme && uri.authority === document.uri.authority &&
+        document.uri.with({ path: sourceSet.module }).toString() === uri.with({ path: target.module }).toString() &&
+        sourceSet.test === target.test && (includeSourceSet || sourceSet.sourceSet !== target.sourceSet);
+    };
+    this.workspace.rememberRoot(document.uri, symbols.packageName);
     const imports: { name: string; path: string[]; start: number; end: number }[] = symbols.imports.filter(item => !item.star && links.some(link => document.offsetAt(link.targetRange.start) === item.start && document.offsetAt(link.targetRange.end) === item.end));
     if (!links.length && offset !== undefined) {
       for (const item of symbols.imports) {
@@ -87,131 +50,49 @@ export class WorkspaceDefinitions {
     }
     if (!links.length && (symbols.reference?.constructorOnly || symbols.reference?.importOnly)) imports.push(...symbols.imports.filter(item => !item.star && item.name === symbols.reference!.name));
     const samePackage = links.length || imports.length || symbols.reference?.importOnly ? undefined : symbols.reference;
-    if (!imports.length && !samePackage && !symbols.query) return links;
-    let files: VSCode.Uri[] | undefined;
-    let scannedWorkspace = false;
-    const sources = new Map<string, string>();
-    const hashes = new Map<string, string>();
-    const entries = new Map<string, [string, VSCode.FileType][]>();
-    const ignoreFiles = new Map<string, string | undefined>();
-    const lookups = new Map<string, SymbolLocation[]>();
-    const lookup: SymbolLookup = async (path, context) => {
-      if (signal.aborted || document.version !== version || !path.length) return [];
-      const lookupKey = JSON.stringify([context.file, path, this.directoryVersion, this.roots.size]);
-      const cachedLookup = lookups.get(lookupKey);
-      if (cachedLookup) return cachedLookup;
-      const name = path.at(-1)!;
-      // Import prefixes may denote packages or object owners; validate the full path after parsing.
-      const packages = Array.from({ length: path.length }, (_, index) => path.slice(0, path.length - index - 1));
-      const directories = new Set<string>();
-      directories.add(vscode.Uri.joinPath(vscode.Uri.parse(context.file), '..').toString());
-      for (const packageName of packages) for (const { uri, prefix } of this.roots.values()) {
-        if (prefix.every((part, index) => packageName[index] === part)) {
-          const suffix = packageName.slice(prefix.length);
-          if (suffix.every(part => !/[\\/]/.test(part) && part !== '.' && part !== '..')) directories.add(vscode.Uri.joinPath(uri, ...suffix).toString());
-        }
-      }
-      const inventoryVersion = this.directoryVersion;
-      const knownDirectories = this.directories;
-      if (knownDirectories) for (const directory of knownDirectories) {
-        if (packages.some(parts => parts.length > 0 && directory.path.endsWith('/' + parts.join('/')))) directories.add(directory.toString());
-      }
-      if (!files || knownDirectories) {
-        if (!knownDirectories) scannedWorkspace = true;
-        const selectedFiles: VSCode.Uri[] = [];
-        for (const folder of vscode.workspace.workspaceFolders ?? []) {
-          const prefix = folder.uri.toString().replace(/\/$/, '') + '/';
-          const selected = knownDirectories ? new Set([...directories].filter(uri => uri === folder.uri.toString() || uri.startsWith(prefix)).map(uri => {
-            const path = vscode.Uri.parse(uri).path.slice(folder.uri.path.replace(/\/$/, '').length).replace(/^\//, '');
-            return path ? path + '/' : '';
-          })) : undefined;
-          if (selected?.size === 0) continue;
-          const relative = await kotlinFiles({
-            entries: async path => {
-              try {
-                const uri = vscode.Uri.joinPath(folder.uri, path);
-                let listed = entries.get(uri.toString());
-                if (!listed) { listed = await this.fs.readDirectory(uri); entries.set(uri.toString(), listed); }
-                return listed.map(([name, type]) => ({
-                  name, directory: type === vscode.FileType.Directory, file: type === vscode.FileType.File,
-                }));
-              } catch { return []; }
-            },
-            ignoreFile: async path => {
-              const uri = vscode.Uri.joinPath(folder.uri, path, '.gitignore');
-              if (ignoreFiles.has(uri.toString())) return ignoreFiles.get(uri.toString());
-              let text: string | undefined;
-              try { text = new TextDecoder().decode(await this.fs.readFile(uri)); } catch { /* No ignore file. */ }
-              ignoreFiles.set(uri.toString(), text);
-              return text;
-            },
-          }, () => signal.aborted || token.isCancellationRequested || document.version !== version, selected);
-          selectedFiles.push(...relative.map(path => vscode.Uri.joinPath(folder.uri, path)));
-        }
-        files = selectedFiles;
-        if (!knownDirectories && !signal.aborted && !token.isCancellationRequested && document.version === version && this.directoryVersion === inventoryVersion) {
-          this.directories = [...new Map(files.map(uri => { const directory = vscode.Uri.joinPath(uri, '..'); return [directory.toString(), directory] as const; })).values()];
-        }
-      }
-      const candidates = files.filter(uri => {
-        const directory = vscode.Uri.joinPath(uri, '..');
-        return directories.has(directory.toString()) || packages.some(parts => parts.length > 0 && directory.path.endsWith('/' + parts.join('/')));
-      }).sort((a, b) => Number(!a.path.endsWith('/' + name + '.kt')) - Number(!b.path.endsWith('/' + name + '.kt')));
-      const found: SymbolLocation[] = [];
-      const match = (file: string, summary: FileSymbols) => summary.declarations.filter(declaration =>
-        accessible(declaration, file === document.uri.toString(), offset) &&
-        declarationPaths(declaration).some(parts => JSON.stringify([...summary.packageName, ...parts]) === JSON.stringify(path))
-      ).map(declaration => ({ file, symbols: summary, declaration }));
-      found.push(...match(document.uri.toString(), symbols));
-      for (const uri of candidates) {
-        if (uri.toString() === document.uri.toString()) continue;
-        if (signal.aborted || document.version !== version) return [];
-        const opened = vscode.workspace.textDocuments.find(doc => doc.uri.toString() === uri.toString());
-        let source: string;
-        try {
-          source = sources.get(uri.toString()) ?? opened?.getText() ?? new TextDecoder().decode(await this.fs.readFile(uri));
-          sources.set(uri.toString(), source);
-        }
-        catch { continue; } // A deleted or unreadable candidate does not invalidate the import fallback.
-        if (!containsName(source, name)) continue;
-        let hash = hashes.get(uri.toString());
-        if (hash === undefined) { hash = createHash('sha256').update(source).digest('hex'); hashes.set(uri.toString(), hash); }
-        const summary = await this.summary(uri, source, hash, signal);
-        if (!summary) continue;
-        found.push(...match(uri.toString(), summary));
-      }
-      if (!found.length && knownDirectories && !scannedWorkspace && !signal.aborted && !token.isCancellationRequested) {
-        this.directories = undefined;
-        files = undefined;
-        return lookup(path, context);
-      }
-      const result = uniqueSymbols(found);
-      lookups.set(lookupKey, result);
-      return result;
-    };
-    const context = { file: document.uri.toString(), symbols };
+    if (!counterpart && !imports.length && !samePackage && !symbols.query) return links;
+    const request = this.workspace.request(document, symbols, signal, token);
+    const lookup: SymbolLookup = (path, context) => request.lookup(path, context);
+    const resolver = new NameResolver(counterpart
+      ? (path, context) => request.lookup(path, context, { key: 'counterpart-types', files: uri => !!counterpartFile(uri, true) })
+      : lookup);
+    const context = { file: document.uri.toString(), symbols, offset };
     const found: SymbolLocation[] = [];
     const fallback: VSCode.DefinitionLink[] = [];
-    if (symbols.query) found.push(...await resolveNavigation(context, lookup));
+    if (counterpart) {
+      const candidates = await request.lookup([...symbols.packageName, ...counterpart.path], context, {
+        key: 'counterparts', files: uri => !!counterpartFile(uri), name: counterpart.path[0],
+        matches: item => counterpartShape(counterpart, symbols, item.declaration, item.symbols),
+      });
+      for (const candidate of candidates) {
+        if (signal.aborted || token.isCancellationRequested || document.version !== version) return [];
+        if (await matchesCounterpart({ ...context, declaration: counterpart }, candidate, resolver)) found.push(candidate);
+      }
+    }
+    else if (symbols.query) found.push(...await resolveNavigation(context, resolver));
     else if (samePackage) {
-      found.push(...(await resolveName([samePackage.name], context, lookup)).filter(item => item.declaration.static && !item.declaration.extension &&
+      found.push(...(candidates(await resolver.declarations([samePackage.name], context))).filter(item => item.declaration.static && !item.declaration.extension &&
         (!samePackage.type || ['CLASS', 'OBJECT_DECLARATION', 'TYPEALIAS'].includes(item.declaration.kind)) &&
         (!samePackage.constructorOnly || ['CLASS', 'TYPEALIAS'].includes(item.declaration.kind))));
     } else for (const item of imports) {
-      const matches = (await lookup(item.path, context)).filter(item => item.declaration.static &&
+      const matches = (await lookup(item.path, context)).filter(item => accessible(item.declaration, item.file === context.file, offset) && item.declaration.static &&
         (!symbols.reference?.constructorOnly || ['CLASS', 'TYPEALIAS'].includes(item.declaration.kind)));
       found.push(...matches);
       if (!matches.length) fallback.push(...links.filter(link => document.offsetAt(link.targetRange.start) === item.start));
     }
     const results: VSCode.DefinitionLink[] = [...fallback];
+    const keyword = counterpart?.expectActual?.keyword;
+    const origin = counterpart && (keyword && keyword[0] <= offset! && offset! < keyword[1]
+      ? keyword : [counterpart.nameStart, counterpart.nameEnd]);
     for (const item of uniqueSymbols(found)) {
       if (signal.aborted || document.version !== version) return links;
       let target: VSCode.TextDocument;
       try { target = await vscode.workspace.openTextDocument(vscode.Uri.parse(item.file)); } catch { continue; }
-      if (item.file !== context.file && hashes.get(item.file) !== createHash('sha256').update(target.getText()).digest('hex')) continue;
+      if (!request.unchanged(item.file, target.getText())) continue;
       const d = item.declaration;
       results.push({ targetUri: target.uri, targetRange: new vscode.Range(target.positionAt(d.start), target.positionAt(d.end)),
-        targetSelectionRange: new vscode.Range(target.positionAt(d.nameStart), target.positionAt(d.nameEnd)) });
+        targetSelectionRange: new vscode.Range(target.positionAt(d.nameStart), target.positionAt(d.nameEnd)),
+        ...(origin ? { originSelectionRange: new vscode.Range(document.positionAt(origin[0]), document.positionAt(origin[1])) } : {}) });
     }
     return results;
   }
